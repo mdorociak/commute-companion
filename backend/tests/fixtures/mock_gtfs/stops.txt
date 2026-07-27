@@ -1,0 +1,8 @@
+stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station,platform_code
+2246799,11,Brzeg,,50.852881,17.470911,1,,
+2333170,,Brzeg,,50.852881,17.470911,0,2246799,II
+1413092,12,Brzeg Dolny,,51.266894,16.725,1,,
+1536298,,Brzeg Dolny,,51.266894,16.725,0,1413092,
+1474786,,Brzeg Dolny,,51.266894,16.725,0,1413092,II
+9999999,99,Empty Station,,50.0,17.0,1,,
+8888888,,Orphan Platform,,50.0,17.0,0,nonexistent_parent,I
