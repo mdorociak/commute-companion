@@ -27,16 +27,17 @@ deliberate graceful-degradation case rather than a missing feature.
 
 **What's built today:**
 
-- Backend: full static GTFS pipeline, four endpoints, in-memory model, GitHub Actions CI, tests.
-- iOS: four-tab app (Commute / Explore / Saved / Alerts), enum-based navigation, 
-  networking to the backend, dynamic station search & selection, SwiftData favorites, 
-  tiered cache on both departures and stops, offline-capable, unit-tests.
+- Backend: static GTFS loading, service-calendar and after-midnight timetable handling,
+  versioned station and scheduled-departure endpoints, an in-memory model, GitHub Actions CI,
+  and deterministic tests.
+- iOS: an initial Xcode and Swift package scaffold with a root SwiftUI view.
 
 **Not yet built (planned):**
 
 - Real-time delays and vehicle positions (KD GTFS-RT protobuf feeds).
 - Tram/bus connections at Wrocław Główny (MPK Wrocław integration).
+- API networking, station search, departures, persistence, and offline caching in the iOS app.
 - Saved commute *routes* (origin → destination), as opposed to single favorite stops.
-- Explore map and Alerts tabs (currently placeholders).
+- Commute, Explore, Saved, and Alerts product features.
 
 ---

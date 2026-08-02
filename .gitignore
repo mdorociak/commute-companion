@@ -16,6 +16,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+*.md
+!README.md
 
 # IDE
 .vscode/
@@ -23,7 +25,8 @@ Thumbs.db
 *.swp
 
 # Xcode
-*.xcuserdata/
+xcuserdata/
+*.xcuserdatad/
 *.xcuserstate
 DerivedData/
 

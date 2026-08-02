@@ -22,38 +22,44 @@ def _stub_state() -> dict[str, Station]:
     }
 
 
-def test_stops_endpoint_returns_all_stations_sorted_by_name() -> None:
+def test_stations_endpoint_returns_all_stations_sorted_by_name() -> None:
     app.state.stations = _stub_state()
     client = TestClient(app)
-    response = client.get("/stops")
+    response = client.get("/api/v1/stations")
     assert response.status_code == 200
     names = [s["name"] for s in response.json()]
     assert names == ["Brzeg", "Brzeg Dolny", "Wrocław Główny"]
 
 
-def test_stops_search_matches_substring_case_insensitively() -> None:
+def test_stations_search_matches_substring_case_insensitively() -> None:
     app.state.stations = _stub_state()
     client = TestClient(app)
-    response = client.get("/stops?search=brzeg")
+    response = client.get("/api/v1/stations?search=brzeg")
     assert response.status_code == 200
     names = [s["name"] for s in response.json()]
     assert names == ["Brzeg", "Brzeg Dolny"]
 
 
-def test_stops_search_with_no_matches_returns_empty_list() -> None:
+def test_stations_search_with_no_matches_returns_empty_list() -> None:
     app.state.stations = _stub_state()
     client = TestClient(app)
-    response = client.get("/stops?search=nonexistent")
+    response = client.get("/api/v1/stations?search=nonexistent")
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_stops_response_includes_platforms() -> None:
+def test_stations_response_includes_platforms() -> None:
     app.state.stations = _stub_state()
     client = TestClient(app)
-    response = client.get("/stops?search=brzeg dolny")
+    response = client.get("/api/v1/stations?search=brzeg dolny")
     body = response.json()
     assert len(body) == 1
     brzeg = body[0]
     assert "platforms" in brzeg
     assert brzeg["platforms"] == []
+
+
+def test_unversioned_stops_route_is_not_exposed() -> None:
+    app.state.stations = _stub_state()
+    response = TestClient(app).get("/stops")
+    assert response.status_code == 404

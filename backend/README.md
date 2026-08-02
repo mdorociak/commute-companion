@@ -24,6 +24,13 @@ uv run uvicorn app.main:app --reload
 
 Then open <http://127.0.0.1:8000/health> — you should see `{"status":"ok"}`. Interactive docs are at <http://127.0.0.1:8000/docs>.
 
+The initial public API routes are:
+
+- `GET /api/v1/stations`
+- `GET /api/v1/stations/{station_id}/departures`
+
+The health route remains unversioned because it describes the service rather than a product resource.
+
 ## Run tests
 
 ```bash
