@@ -30,7 +30,8 @@ deliberate graceful-degradation case rather than a missing feature.
 - Backend: static GTFS loading, service-calendar and after-midnight timetable handling,
   versioned station and scheduled-departure endpoints, an in-memory model, GitHub Actions CI,
   and deterministic tests.
-- iOS: an initial Xcode and Swift package scaffold with a root SwiftUI view.
+- iOS: an Xcode app target, a modular local Swift package, and a tested HTTP client foundation;
+  the first API-backed feature UI is not yet implemented.
 
 **Not yet built (planned):**
 

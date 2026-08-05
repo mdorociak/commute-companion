@@ -1,10 +1,8 @@
-
 import SwiftUI
 
 public struct RootView: View {
-    
-    public init () {}
-    
+    public init() {}
+
     public var body: some View {
         Text("Root View")
     }
