@@ -42,6 +42,11 @@ let package = Package(
             dependencies: ["APIClient"],
             swiftSettings: baseSettings
         ),
+        .testTarget(
+            name: "StationsFeatureTests",
+            dependencies: ["StationsFeature"],
+            swiftSettings: baseSettings
+        ),
     ],
     swiftLanguageModes: [.v6]
 )
