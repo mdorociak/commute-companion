@@ -105,19 +105,80 @@ struct RemoteStationsRepositoryTests {
     }
 
     @Test
-    func fetchStationsPropagatesTransportError() async throws {
+    func fetchStationsMapsOfflineErrorToUnavailable() async throws {
         let baseURL = try #require(URL(string: "https://example.com"))
 
         let apiClient = APIClient(
             baseURL: baseURL,
-            transport: FailingHTTPTransport()
+            transport: OfflineHTTPTransport()
         )
 
         let repository = RemoteStationsRepository(
             apiClient: apiClient
         )
 
-        await #expect(throws: TestError.transport) {
+        await #expect(throws: StationsRepositoryError.unavailable) {
+            try await repository.fetchStations(search: nil)
+        }
+    }
+
+    @Test
+    func fetchStationsMapsMalformedResponseToInvalidData() async throws {
+        let transport = HTTPTransportStub(
+            response: HTTPResponse(
+                data: Data("not-json".utf8),
+                statusCode: 200
+            )
+        )
+
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: transport
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: StationsRepositoryError.invalidData) {
+            try await repository.fetchStations(search: nil)
+        }
+    }
+
+    @Test
+    func fetchStationsMapsUnknownErrorToUnexpected() async throws {
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: UnknownFailureHTTPTransport()
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: StationsRepositoryError.unexpected) {
+            try await repository.fetchStations(search: nil)
+        }
+    }
+
+    @Test
+    func fetchStationsPropagatesCancellation() async throws {
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: CancellingHTTPTransport()
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: CancellationError.self) {
             try await repository.fetchStations(search: nil)
         }
     }
@@ -138,12 +199,24 @@ private actor HTTPTransportStub: HTTPTransport {
     }
 }
 
-private struct FailingHTTPTransport: HTTPTransport {
+private struct OfflineHTTPTransport: HTTPTransport {
+    func response(for request: URLRequest) async throws -> HTTPResponse {
+        throw URLError(.notConnectedToInternet)
+    }
+}
+
+private struct UnknownFailureHTTPTransport: HTTPTransport {
     func response(for request: URLRequest) async throws -> HTTPResponse {
         throw TestError.transport
     }
 }
 
-private enum TestError: Error {
+private struct CancellingHTTPTransport: HTTPTransport {
+    func response(for request: URLRequest) async throws -> HTTPResponse {
+        throw CancellationError()
+    }
+}
+
+private enum TestError: Error, Sendable {
     case transport
 }
