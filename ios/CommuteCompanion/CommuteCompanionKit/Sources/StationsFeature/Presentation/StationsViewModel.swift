@@ -19,81 +19,35 @@ enum StationsViewState: Equatable, Sendable {
 final class StationsViewModel {
     private let repository: any StationsRepository
 
-    @ObservationIgnored
-    private var loadTask: Task<Void, Never>?
-
-    @ObservationIgnored
-    private var requestID: UInt = 0
-
     private(set) var state: StationsViewState = .idle
 
     init(repository: any StationsRepository) {
         self.repository = repository
     }
 
-    deinit {
-        loadTask?.cancel()
-    }
-
-    func load(search: String? = nil) {
-        loadTask?.cancel()
-
-        requestID &+= 1
-        let currentRequestID = requestID
-
-        // Capture the dependency independently of self.
-        let repository = repository
-
+    func load(search: String? = nil) async {
         state = .loading
 
-        loadTask = Task { [weak self] in
-            do {
-                let stations = try await repository.fetchStations(
-                    search: search
-                )
+        do {
+            let stations = try await repository.fetchStations(
+                search: search
+            )
 
-                guard !Task.isCancelled else { return }
+            try Task.checkCancellation()
 
-                guard let self,
-                      requestID == currentRequestID
-                else { return }
+            state = stations.isEmpty ? .empty : .loaded(stations)
 
-                state = stations.isEmpty ? .empty : .loaded(stations)
+        } catch is CancellationError {
+            // Cancellation is not a user-facing failure.
 
-                loadTask = nil
+        } catch let error as StationsRepositoryError {
+            guard !Task.isCancelled else { return }
+            state = .failure(mapFailure(error))
 
-            } catch is CancellationError {
-                // Cancellation is not a user-facing failure.
-
-            } catch let error as StationsRepositoryError {
-                guard let self,
-                      requestID == currentRequestID
-                else {
-                    return
-                }
-
-                state = .failure(mapFailure(error))
-                loadTask = nil
-
-            } catch {
-                guard let self,
-                      requestID == currentRequestID
-                else {
-                    return
-                }
-
-                state = .failure(.unexpected)
-                loadTask = nil
-            }
+        } catch {
+            guard !Task.isCancelled else { return }
+            state = .failure(.unexpected)
         }
-    }
-
-    func cancelLoad() {
-        loadTask?.cancel()
-        loadTask = nil
-
-        // Invalidate any result from work that fails to honor cancellation.
-        requestID &+= 1
     }
 
     private func mapFailure(

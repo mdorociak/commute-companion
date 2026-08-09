@@ -1,4 +1,3 @@
-import Observation
 import Testing
 @testable import StationsFeature
 
@@ -13,18 +12,26 @@ struct StationsViewModelTests {
             name: "Brzeg",
             code: nil
         )
-        let repository = ImmediateStationsRepository(
-            result: .success([station])
-        )
+        let repository = ControlledStationsRepository()
         let viewModel = StationsViewModel(repository: repository)
 
         #expect(viewModel.state == .idle)
 
-        viewModel.load()
+        let loadTask = Task {
+            await viewModel.load()
+        }
+
+        await repository.waitUntilRequested(search: "")
 
         #expect(viewModel.state == .loading)
 
-        await waitForState(.loaded([station]), in: viewModel)
+        await repository.complete(
+            search: "",
+            with: .success([station])
+        )
+        await loadTask.value
+
+        #expect(viewModel.state == .loaded([station]))
     }
 
     @Test
@@ -34,9 +41,9 @@ struct StationsViewModelTests {
         )
         let viewModel = StationsViewModel(repository: repository)
 
-        viewModel.load()
+        await viewModel.load()
 
-        await waitForState(.empty, in: viewModel)
+        #expect(viewModel.state == .empty)
     }
 
     @Test
@@ -53,14 +60,14 @@ struct StationsViewModelTests {
             )
             let viewModel = StationsViewModel(repository: repository)
 
-            viewModel.load()
+            await viewModel.load()
 
-            await waitForState(.failure(viewFailure), in: viewModel)
+            #expect(viewModel.state == .failure(viewFailure))
         }
     }
 
     @Test
-    func newerLoadCancelsOlderLoadAndKeepsNewestResult() async {
+    func cancelledLoadCannotOverwriteNewerResult() async {
         let repository = ControlledStationsRepository()
         let viewModel = StationsViewModel(repository: repository)
         let oldStation = Station(
@@ -74,24 +81,32 @@ struct StationsViewModelTests {
             code: nil
         )
 
-        viewModel.load(search: "old")
+        let oldLoadTask = Task {
+            await viewModel.load(search: "old")
+        }
         await repository.waitUntilRequested(search: "old")
 
-        viewModel.load(search: "new")
-        await repository.waitUntilRequested(search: "new")
+        oldLoadTask.cancel()
         await repository.waitUntilCancelled(search: "old")
+
+        let newLoadTask = Task {
+            await viewModel.load(search: "new")
+        }
+        await repository.waitUntilRequested(search: "new")
 
         await repository.complete(
             search: "new",
             with: .success([newStation])
         )
-        await waitForState(.loaded([newStation]), in: viewModel)
+        await newLoadTask.value
+
+        #expect(viewModel.state == .loaded([newStation]))
 
         await repository.complete(
             search: "old",
             with: .success([oldStation])
         )
-        await Task.yield()
+        await oldLoadTask.value
 
         #expect(viewModel.state == .loaded([newStation]))
     }
@@ -174,22 +189,6 @@ private actor ControlledStationsRepository: StationsRepository {
 
         for continuation in continuations {
             continuation.resume()
-        }
-    }
-}
-
-@MainActor
-private func waitForState(
-    _ expectedState: StationsViewState,
-    in viewModel: StationsViewModel
-) async {
-    while viewModel.state != expectedState {
-        await withCheckedContinuation { continuation in
-            withObservationTracking {
-                _ = viewModel.state
-            } onChange: {
-                continuation.resume()
-            }
         }
     }
 }
