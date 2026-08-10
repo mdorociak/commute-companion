@@ -1,11 +1,23 @@
 import SwiftUI
+import APIClient
 
-struct StationsView: View {
-    let viewModel: StationsViewModel
+public struct StationsView: View {
+    @State private var viewModel: StationsViewModel
 
     @State private var reloadTrigger = false
 
-    var body: some View {
+    public init(apiClient: APIClient) {
+        let repository = RemoteStationsRepository(apiClient: apiClient)
+        _viewModel = State(
+            initialValue: StationsViewModel(repository: repository)
+        )
+    }
+
+    init(viewModel: StationsViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
+    public var body: some View {
         ZStack {
             content
         }

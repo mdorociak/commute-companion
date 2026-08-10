@@ -20,7 +20,10 @@ let package = Package(
     targets: [
         .target(
             name: "Root",
-            dependencies: ["StationsFeature"],
+            dependencies: [
+                "StationsFeature",
+                "APIClient",
+            ],
             swiftSettings: baseSettings
         ),
         .target(
@@ -53,4 +56,3 @@ let package = Package(
     ],
     swiftLanguageModes: [.v6]
 )
-
