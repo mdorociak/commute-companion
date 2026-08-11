@@ -3,14 +3,11 @@ import APIClient
 
 public struct StationsView: View {
     @State private var viewModel: StationsViewModel
-
     @State private var reloadTrigger = false
 
     public init(apiClient: APIClient) {
         let repository = RemoteStationsRepository(apiClient: apiClient)
-        _viewModel = State(
-            initialValue: StationsViewModel(repository: repository)
-        )
+        _viewModel = State(initialValue: StationsViewModel(repository: repository))
     }
 
     init(viewModel: StationsViewModel) {
@@ -18,14 +15,13 @@ public struct StationsView: View {
     }
 
     public var body: some View {
-        ZStack {
-            content
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .navigationTitle("Stations")
-        .task(id: reloadTrigger) {
-            await viewModel.load()
-        }
+        content
+            .navigationTitle("Stations")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .searchable(text: $viewModel.searchText, prompt: "Search stations")
+            .task(id: reloadTrigger) {
+                await viewModel.load()
+            }
     }
 
     @ViewBuilder
@@ -34,8 +30,13 @@ public struct StationsView: View {
         case .idle, .loading:
             ProgressView("Loading stations…")
 
-        case .loaded(let stations):
-            stationsList(stations)
+        case .loaded:
+            if viewModel.filteredStations.isEmpty,
+               viewModel.hasActiveSearch {
+                noMatchingStationsView
+            } else {
+                stationsList(viewModel.filteredStations)
+            }
 
         case .empty:
             ContentUnavailableView(
@@ -49,6 +50,16 @@ public struct StationsView: View {
         case .failure(let failure):
             failureView(for: failure)
         }
+    }
+
+    private var noMatchingStationsView: some View {
+        ContentUnavailableView(
+            "No matching stations",
+            systemImage: "xmark.circle.fill",
+            description: Text(
+                "No stations match your search query."
+            )
+        )
     }
 
     private func stationsList(_ stations: [Station]) -> some View {
@@ -66,9 +77,7 @@ public struct StationsView: View {
         }
     }
 
-    private func failureView(
-        for failure: StationsViewFailure
-    ) -> some View {
+    private func failureView(for failure: StationsViewFailure) -> some View {
         ContentUnavailableView {
             Label(failure.title, systemImage: failure.systemImage)
         } description: {

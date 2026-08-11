@@ -19,18 +19,20 @@ enum StationsViewState: Equatable, Sendable {
 final class StationsViewModel {
     private let repository: any StationsRepository
 
+    var searchText = ""
+
     private(set) var state: StationsViewState = .idle
 
     init(repository: any StationsRepository) {
         self.repository = repository
     }
 
-    func load(search: String? = nil) async {
+    func load() async {
         state = .loading
 
         do {
             let stations = try await repository.fetchStations(
-                search: search
+                search: nil
             )
 
             try Task.checkCancellation()
@@ -50,9 +52,27 @@ final class StationsViewModel {
         }
     }
 
-    private func mapFailure(
-        _ error: StationsRepositoryError
-    ) -> StationsViewFailure {
+    var filteredStations: [Station] {
+        guard case let .loaded(stations) = state else { return [] }
+
+        let query = normalizedSearchText
+
+        guard !query.isEmpty else { return stations }
+
+        return stations.filter { station in
+            station.name.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var hasActiveSearch: Bool {
+        !normalizedSearchText.isEmpty
+    }
+
+    private var normalizedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func mapFailure(_ error: StationsRepositoryError) -> StationsViewFailure {
         switch error {
         case .unavailable:
             .unavailable

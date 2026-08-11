@@ -67,48 +67,99 @@ struct StationsViewModelTests {
     }
 
     @Test
-    func cancelledLoadCannotOverwriteNewerResult() async {
+    func searchFiltersLoadedStationsCaseInsensitivelyAndTrimsWhitespace() async {
+        let brzeg = Station(
+            id: "brzeg",
+            name: "Brzeg",
+            code: nil
+        )
+        let brzegDolny = Station(
+            id: "brzeg-dolny",
+            name: "Brzeg Dolny",
+            code: nil
+        )
+        let wroclaw = Station(
+            id: "wroclaw",
+            name: "Wrocław Główny",
+            code: nil
+        )
+        let viewModel = StationsViewModel(
+            repository: ImmediateStationsRepository(
+                result: .success([brzeg, brzegDolny, wroclaw])
+            )
+        )
+
+        await viewModel.load()
+        viewModel.searchText = "  bRzEg  "
+
+        #expect(viewModel.hasActiveSearch)
+        #expect(viewModel.filteredStations == [brzeg, brzegDolny])
+    }
+
+    @Test
+    func emptySearchRestoresAllLoadedStations() async {
+        let stations = [
+            Station(id: "brzeg", name: "Brzeg", code: nil),
+            Station(id: "wroclaw", name: "Wrocław Główny", code: nil),
+        ]
+        let viewModel = StationsViewModel(
+            repository: ImmediateStationsRepository(
+                result: .success(stations)
+            )
+        )
+
+        await viewModel.load()
+        viewModel.searchText = "Brzeg"
+        #expect(viewModel.filteredStations.count == 1)
+
+        viewModel.searchText = " \n "
+
+        #expect(!viewModel.hasActiveSearch)
+        #expect(viewModel.filteredStations == stations)
+    }
+
+    @Test
+    func unmatchedSearchReturnsNoVisibleStations() async {
+        let viewModel = StationsViewModel(
+            repository: ImmediateStationsRepository(
+                result: .success([
+                    Station(id: "brzeg", name: "Brzeg", code: nil)
+                ])
+            )
+        )
+
+        await viewModel.load()
+        viewModel.searchText = "Opole"
+
+        #expect(viewModel.hasActiveSearch)
+        #expect(viewModel.filteredStations.isEmpty)
+    }
+
+    @Test
+    func cancelledLoadCannotPublishLateResult() async {
         let repository = ControlledStationsRepository()
         let viewModel = StationsViewModel(repository: repository)
-        let oldStation = Station(
-            id: "old",
-            name: "Old result",
-            code: nil
-        )
-        let newStation = Station(
-            id: "new",
-            name: "New result",
+        let station = Station(
+            id: "brzeg",
+            name: "Brzeg",
             code: nil
         )
 
-        let oldLoadTask = Task {
-            await viewModel.load(search: "old")
+        let loadTask = Task {
+            await viewModel.load()
         }
-        await repository.waitUntilRequested(search: "old")
+        await repository.waitUntilRequested(search: "")
 
-        oldLoadTask.cancel()
-        await repository.waitUntilCancelled(search: "old")
-
-        let newLoadTask = Task {
-            await viewModel.load(search: "new")
-        }
-        await repository.waitUntilRequested(search: "new")
+        loadTask.cancel()
+        await repository.waitUntilCancelled(search: "")
 
         await repository.complete(
-            search: "new",
-            with: .success([newStation])
+            search: "",
+            with: .success([station])
         )
-        await newLoadTask.value
+        await loadTask.value
 
-        #expect(viewModel.state == .loaded([newStation]))
-
-        await repository.complete(
-            search: "old",
-            with: .success([oldStation])
-        )
-        await oldLoadTask.value
-
-        #expect(viewModel.state == .loaded([newStation]))
+        #expect(viewModel.state == .loading)
     }
 }
 
