@@ -14,6 +14,7 @@ from .gtfs.stop_times import load_stop_times
 from .timetable import Timetable
 
 _DEFAULT_GTFS_DIR = Path(__file__).resolve().parents[2] / "data" / "kd_gtfs"
+_PROVIDER_ID = "kd"
 _PROVIDER_TIMEZONE = ZoneInfo("Europe/Warsaw")
 
 
@@ -41,6 +42,7 @@ app.include_router(api_v1_router)
 def _build_timetable(gtfs_dir: Path) -> Timetable:
     if not (gtfs_dir / "stops.txt").exists():
         return Timetable(
+            provider_id=_PROVIDER_ID,
             stations={},
             trips={},
             routes={},
@@ -49,6 +51,7 @@ def _build_timetable(gtfs_dir: Path) -> Timetable:
             provider_timezone=_PROVIDER_TIMEZONE,
         )
     return Timetable(
+        provider_id=_PROVIDER_ID,
         stations=load_stations(gtfs_dir),
         trips=load_trips(gtfs_dir),
         routes=load_routes(gtfs_dir),

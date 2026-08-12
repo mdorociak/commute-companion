@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 
+from .departure_identity import ScheduledStopEventIdentity
 from .gtfs.models import Route, Station, Trip
 from .gtfs.service_calendar import ServiceCalendar
 from .gtfs.service_day import QueryWindow, ServiceDayResolver
@@ -11,6 +12,7 @@ from .gtfs.stop_times import StopTime
 
 
 class Departure(BaseModel):
+    id: str
     line: str
     destination: str | None
     departure_time: datetime
@@ -19,11 +21,8 @@ class Departure(BaseModel):
 
 @dataclass(frozen=True)
 class ScheduledDepartureCandidate:
-    service_date: date
+    identity: ScheduledStopEventIdentity
     scheduled_utc: datetime
-    trip_id: str
-    stop_id: str
-    stop_sequence: int
     line: str
     destination: str | None
     platform: str | None
@@ -31,6 +30,7 @@ class ScheduledDepartureCandidate:
 
 @dataclass
 class Timetable:
+    provider_id: str
     stations: dict[str, Station]
     trips: dict[str, Trip]
     routes: dict[str, Route]
@@ -71,7 +71,8 @@ class Timetable:
             targets = [(station.id, None)]
 
         candidates: dict[
-            tuple[date, str, str, int, datetime], ScheduledDepartureCandidate
+            tuple[ScheduledStopEventIdentity, datetime],
+            ScheduledDepartureCandidate,
         ] = {}
         service_dates = self._service_day_resolver.candidate_service_dates(
             window,
@@ -96,20 +97,20 @@ class Timetable:
                         continue
                     route = self.routes.get(trip.route_id)
                     candidate = ScheduledDepartureCandidate(
-                        service_date=service_date,
+                        identity=ScheduledStopEventIdentity(
+                            provider_id=self.provider_id,
+                            service_date=service_date,
+                            provider_trip_id=trip.id,
+                            provider_stop_id=stop_id,
+                            stop_sequence=stop_time.stop_sequence,
+                        ),
                         scheduled_utc=scheduled_utc,
-                        trip_id=trip.id,
-                        stop_id=stop_id,
-                        stop_sequence=stop_time.stop_sequence,
                         line=route.short_name if route else trip.route_id,
                         destination=trip.headsign,
                         platform=platform_code,
                     )
                     identity = (
-                        candidate.service_date,
-                        candidate.trip_id,
-                        candidate.stop_id,
-                        candidate.stop_sequence,
+                        candidate.identity,
                         candidate.scheduled_utc,
                     )
                     candidates[identity] = candidate
@@ -119,14 +120,15 @@ class Timetable:
             key=lambda candidate: (
                 candidate.scheduled_utc,
                 candidate.line,
-                candidate.trip_id,
-                candidate.stop_sequence,
-                candidate.stop_id,
-                candidate.service_date,
+                candidate.identity.provider_trip_id,
+                candidate.identity.stop_sequence,
+                candidate.identity.provider_stop_id,
+                candidate.identity.service_date,
             ),
         )
         return [
             Departure(
+                id=candidate.identity.opaque_id,
                 line=candidate.line,
                 destination=candidate.destination,
                 departure_time=candidate.scheduled_utc.astimezone(

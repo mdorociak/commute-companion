@@ -22,6 +22,7 @@ BRZEG_DOLNY = "1413092"
 
 def _timetable() -> Timetable:
     return Timetable(
+        provider_id="kd",
         stations=load_stations(FIXTURE_DIR),
         trips=load_trips(FIXTURE_DIR),
         routes=load_routes(FIXTURE_DIR),
@@ -198,6 +199,7 @@ def test_departures_are_sorted_by_utc_instant_across_autumn_fold() -> None:
         platforms=[],
     )
     timetable = Timetable(
+        provider_id="test-provider",
         stations={station.id: station},
         trips={
             "before-fold": Trip(
@@ -267,6 +269,7 @@ def test_simultaneous_departures_use_line_as_the_first_tie_breaker() -> None:
         platforms=[],
     )
     timetable = Timetable(
+        provider_id="test-provider",
         stations={station.id: station},
         trips={
             "a-trip": Trip(
@@ -326,6 +329,7 @@ def test_simultaneous_departures_use_line_as_the_first_tie_breaker() -> None:
 
 def test_maximum_service_day_seconds_uses_arrivals_and_departures() -> None:
     timetable = Timetable(
+        provider_id="test-provider",
         stations={},
         trips={},
         routes={},

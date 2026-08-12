@@ -1,3 +1,4 @@
+import csv
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -20,6 +21,7 @@ BRZEG = "2246799"
 
 def _load_timetable() -> Timetable:
     return Timetable(
+        provider_id="kd",
         stations=load_stations(FIXTURE_DIR),
         trips=load_trips(FIXTURE_DIR),
         routes=load_routes(FIXTURE_DIR),
@@ -61,6 +63,51 @@ def test_departure_time_is_a_timezone_aware_iso_timestamp() -> None:
     body = client.get(_departures_path(BRZEG)).json()
     first = datetime.fromisoformat(body[0]["departure_time"])
     assert first == datetime(2026, 5, 20, 5, 36, tzinfo=WARSAW)
+
+
+def test_departure_ids_are_stable_across_repeated_requests() -> None:
+    now = datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW)
+
+    first = _client_at(now).get(_departures_path(BRZEG))
+    second = _client_at(now).get(_departures_path(BRZEG))
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+
+    first_ids = [departure["id"] for departure in first.json()]
+    second_ids = [departure["id"] for departure in second.json()]
+
+    assert first_ids
+    assert first_ids == second_ids
+    assert len(first_ids) == len(set(first_ids))
+
+
+def test_departure_id_does_not_expose_raw_gtfs_trip_id() -> None:
+    client = _client_at(datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW))
+
+    response = client.get(_departures_path(BRZEG))
+
+    assert response.status_code == 200
+
+    with (FIXTURE_DIR / "trips.txt").open(
+        encoding="utf-8-sig",
+        newline="",
+    ) as trips_file:
+        raw_trip_ids = {
+            row["trip_id"]
+            for row in csv.DictReader(trips_file)
+        }
+
+    for departure in response.json():
+        departure_id = departure["id"]
+
+        assert isinstance(departure_id, str)
+        assert departure_id
+        assert departure_id not in raw_trip_ids
+        assert all(
+            trip_id not in departure_id
+            for trip_id in raw_trip_ids
+        )
 
 
 def test_departures_returns_previous_service_day_trip_after_midnight() -> None:
