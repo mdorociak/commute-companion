@@ -61,7 +61,10 @@ let package = Package(
         ),
         .testTarget(
             name: "DeparturesFeatureTests",
-            dependencies: ["DeparturesFeature"],
+            dependencies: [
+                "DeparturesFeature",
+                "APIClient",
+            ],
             swiftSettings: baseSettings
         )
     ],
