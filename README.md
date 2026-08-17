@@ -1,44 +1,47 @@
-# Commuter App
+# Commuter Companion
 
 [![Backend](https://github.com/mdorociak/commuter-app/actions/workflows/backend.yml/badge.svg)](https://github.com/mdorociak/commuter-app/actions/workflows/backend.yml)
 
-An iOS commuter companion for the Brzeg → Wrocław/Opole train commute. Combines Koleje Dolnośląskie (KD) train schedules and real-time delays with MPK Wrocław city transit connections, so you can see not just when the next train leaves but whether you'll still catch your tram at the other end.
-
-
----
-
-## What it does
-
-- **Live departures** from any KD station, adjusted to the current time and service day.
-- **Station search & selection** — pick any stop; the choice is remembered across launches.
-- **Favorite stops**, persisted locally and surviving relaunches.
-- **Works offline** — schedules are cached on device; the app shows the last-known board
-  (clearly flagged as cached) when there's no connection.
-- *(Planned)* **Connections**: for each train, the tram/bus connections at Wrocław Główny,
-  adjusted for real-time delays.
-
-Opole is intentionally **train-only** (no public city-transit API is available there) — a
-deliberate graceful-degradation case rather than a missing feature.
+An iOS commuter companion for recurring Brzeg → Wrocław and Brzeg → Opole
+journeys. The current implementation combines a FastAPI scheduled-transport
+backend with the beginning of a native SwiftUI client. Realtime disruption and
+Wrocław city-transit connections remain part of the product direction, not
+completed functionality.
 
 ---
 
-## Current stage of the project
+## What's built today
 
+- **Backend:** static KD GTFS loading, service-calendar and after-midnight
+  timetable handling, versioned station and scheduled-departure endpoints,
+  stable opaque departure identifiers, and deterministic tests.
+- **iOS foundation:** an Xcode application target, one modular local Swift
+  package, explicit dependency injection, and a tested provider-neutral HTTP
+  client.
+- **Stations:** an API-backed SwiftUI station list with local search and
+  explicit loading, empty, and failure states.
+- **Departures data:** a dedicated feature target with DTO/domain separation,
+  ISO-8601 timestamp decoding, a focused repository boundary, real API
+  integration, cancellation handling, and deterministic tests.
 
-**What's built today:**
+The next product slice is station selection and a SwiftUI departure board backed
+by the existing departures repository.
 
-- Backend: static GTFS loading, service-calendar and after-midnight timetable handling,
-  versioned station and scheduled-departure endpoints, an in-memory model, GitHub Actions CI,
-  and deterministic tests.
-- iOS: an Xcode app target, a modular local Swift package, and a tested HTTP client foundation;
-  the first API-backed feature UI is not yet implemented.
+---
 
-**Not yet built (planned):**
+## Planned
 
-- Real-time delays and vehicle positions (KD GTFS-RT protobuf feeds).
+- Departure presentation and station-to-departures navigation in the iOS app.
+- Realtime delays and vehicle positions integrated into departure responses.
 - Tram/bus connections at Wrocław Główny (MPK Wrocław integration).
-- API networking, station search, departures, persistence, and offline caching in the iOS app.
-- Saved commute *routes* (origin → destination), as opposed to single favorite stops.
+- Favorites, saved station or commute restoration, and local preferences.
+- Offline caching with explicit cached and stale presentation states.
+- Saved commute *routes* (origin → destination), as opposed to single favorite
+  stops.
 - Commute, Explore, Saved, and Alerts product features.
+
+Opole is intentionally train-only in the initial product scope. Realtime,
+freshness metadata, caching, and connection calculation must not be presented as
+complete until they are integrated and tested end to end.
 
 ---
