@@ -20,18 +20,19 @@ completed functionality.
   client.
 - **Stations:** an API-backed SwiftUI station list with local search and
   explicit loading, empty, and failure states.
-- **Departures data:** a dedicated feature target with DTO/domain separation,
-  ISO-8601 timestamp decoding, a focused repository boundary, real API
-  integration, cancellation handling, and deterministic tests.
+- **Departures:** a dedicated feature target with DTO/domain separation, real
+  API integration, cancellation-aware state loading, a tested ViewModel, and a
+  public scheduled-departures screen with loading, empty, and typed failure
+  states.
 
-The next product slice is station selection and a SwiftUI departure board backed
-by the existing departures repository.
+The next product slice is station selection and Root-owned navigation into the
+existing scheduled-departures screen.
 
 ---
 
 ## Planned
 
-- Departure presentation and station-to-departures navigation in the iOS app.
+- Station-to-departures navigation in the iOS app.
 - Realtime delays and vehicle positions integrated into departure responses.
 - Tram/bus connections at Wrocław Główny (MPK Wrocław integration).
 - Favorites, saved station or commute restoration, and local preferences.
