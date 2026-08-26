@@ -24,15 +24,16 @@ completed functionality.
   API integration, cancellation-aware state loading, a tested ViewModel, and a
   public scheduled-departures screen with loading, empty, and typed failure
   states.
+- **Navigation:** typed station selection composed by `Root` into the scheduled
+  departures feature without coupling the feature targets to one another.
 
-The next product slice is station selection and Root-owned navigation into the
-existing scheduled-departures screen.
+The iOS app now supports an API-backed journey from station discovery and local
+search into a selected station's scheduled departure board.
 
 ---
 
 ## Planned
 
-- Station-to-departures navigation in the iOS app.
 - Realtime delays and vehicle positions integrated into departure responses.
 - Tram/bus connections at Wrocław Główny (MPK Wrocław integration).
 - Favorites, saved station or commute restoration, and local preferences.

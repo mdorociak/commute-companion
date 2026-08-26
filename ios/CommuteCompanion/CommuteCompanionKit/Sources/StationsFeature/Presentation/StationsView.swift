@@ -64,16 +64,18 @@ public struct StationsView: View {
 
     private func stationsList(_ stations: [Station]) -> some View {
         List(stations) { station in
-            VStack(alignment: .leading, spacing: 4) {
-                Text(station.name)
+            NavigationLink(value: station) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(station.name)
 
-                if let code = station.code, !code.isEmpty {
-                    Text("Code: \(code)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    if let code = station.code, !code.isEmpty {
+                        Text("Code: \(code)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .accessibilityElement(children: .combine)
             }
-            .accessibilityElement(children: .combine)
         }
     }
 
