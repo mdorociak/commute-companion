@@ -1,0 +1,49 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build app
+        working-directory: ios/CommuteCompanion
+        run: >-
+          xcodebuild build
+          -project CommuteCompanion.xcodeproj
+          -scheme CommuteCompanion
+          -destination 'generic/platform=iOS Simulator'
+
+      - name: Test package
+        working-directory: ios/CommuteCompanion/CommuteCompanionKit
+        run: >-
+          xcodebuild test
+          -scheme CommuteCompanionKit
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'
