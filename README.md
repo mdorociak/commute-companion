@@ -1,6 +1,7 @@
 # Commuter Companion
 
-[![Backend](https://github.com/mdorociak/commuter-app/actions/workflows/backend.yml/badge.svg)](https://github.com/mdorociak/commuter-app/actions/workflows/backend.yml)
+[![Backend CI](https://github.com/mdorociak/commute-companion/actions/workflows/backend.yml/badge.svg)](https://github.com/mdorociak/commute-companion/actions/workflows/backend.yml)
+[![iOS CI](https://github.com/mdorociak/commute-companion/actions/workflows/ios.yml/badge.svg)](https://github.com/mdorociak/commute-companion/actions/workflows/ios.yml)
 
 An iOS commuter companion for recurring Brzeg → Wrocław and Brzeg → Opole
 journeys. The current implementation combines a FastAPI scheduled-transport
@@ -26,6 +27,9 @@ completed functionality.
   states.
 - **Navigation:** typed station selection composed by `Root` into the scheduled
   departures feature without coupling the feature targets to one another.
+- **Continuous integration:** GitHub Actions runs the deterministic backend
+  tests, builds the iOS app with Xcode 26.6, and runs the aggregate
+  `CommuteCompanionKit` test scheme on an iOS Simulator.
 
 The iOS app now supports an API-backed journey from station discovery and local
 search into a selected station's scheduled departure board.
