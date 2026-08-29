@@ -16,8 +16,6 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
-*.md
-!README.md
 
 # IDE
 .vscode/
@@ -32,3 +30,7 @@ DerivedData/
 
 # GTFS data
 backend/data/
+
+# Other
+*.md
+!README.md

@@ -1,12 +1,15 @@
 import csv
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from .models import Platform, Route, Station, Trip, FeedInfo
+from .models import FeedInfo, Platform, Route, Station, Trip
+
 
 def _gtfs_date(value: str):
     value = value.strip()
-    return datetime.strptime(value, "%Y%m%d").date() if value else None
+    # A GTFS calendar date carries no time and no zone. The naive datetime is
+    # discarded by .date() on the same line, so it never reaches a calculation.
+    return datetime.strptime(value, "%Y%m%d").date() if value else None  # noqa: DTZ007
 
 def load_stations(gtfs_dir: Path) -> dict[str, Station]:
 

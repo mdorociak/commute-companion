@@ -13,6 +13,7 @@ Scenario this encodes:
   - A malformed trip_update missing trip_id, to test defensive parsing.
 """
 from pathlib import Path
+
 from google.transit import gtfs_realtime_pb2
 
 
@@ -52,7 +53,7 @@ def build_fixture(path: Path) -> None:
 
     e4 = feed.entity.add()
     e4.id = "t-malformed"
-    e4.trip_update.trip.trip_id = ""   
+    e4.trip_update.trip.trip_id = ""
     e4.trip_update.stop_time_update.add().stop_sequence = 1
 
     path.write_bytes(feed.SerializeToString())

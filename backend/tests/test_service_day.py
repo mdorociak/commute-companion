@@ -5,7 +5,6 @@ import pytest
 
 from app.gtfs.service_day import QueryWindow, ServiceDayResolver
 
-
 WARSAW = ZoneInfo("Europe/Warsaw")
 RESOLVER = ServiceDayResolver(WARSAW)
 
@@ -22,13 +21,28 @@ def test_query_window_normalizes_bounds_to_utc() -> None:
     assert window.end_utc.tzinfo is UTC
 
 
+# The naive boundaries below are the point of the first two cases: they prove
+# QueryWindow rejects them instead of assuming a timezone. DTZ001 is suppressed
+# per line so that an accidental naive datetime elsewhere still fails the lint.
 @pytest.mark.parametrize(
     ("start", "end"),
     [
-        (datetime(2026, 5, 24, 0, 30), datetime(2026, 5, 24, 2, 0, tzinfo=UTC)),
-        (datetime(2026, 5, 24, 0, 30, tzinfo=UTC), datetime(2026, 5, 24, 2, 0)),
-        (datetime(2026, 5, 24, 2, 0, tzinfo=UTC), datetime(2026, 5, 24, 2, 0, tzinfo=UTC)),
-        (datetime(2026, 5, 24, 3, 0, tzinfo=UTC), datetime(2026, 5, 24, 2, 0, tzinfo=UTC)),
+        (
+            datetime(2026, 5, 24, 0, 30),  # noqa: DTZ001
+            datetime(2026, 5, 24, 2, 0, tzinfo=UTC),
+        ),
+        (
+            datetime(2026, 5, 24, 0, 30, tzinfo=UTC),
+            datetime(2026, 5, 24, 2, 0),  # noqa: DTZ001
+        ),
+        (
+            datetime(2026, 5, 24, 2, 0, tzinfo=UTC),
+            datetime(2026, 5, 24, 2, 0, tzinfo=UTC),
+        ),
+        (
+            datetime(2026, 5, 24, 3, 0, tzinfo=UTC),
+            datetime(2026, 5, 24, 2, 0, tzinfo=UTC),
+        ),
     ],
 )
 def test_query_window_rejects_invalid_boundaries(

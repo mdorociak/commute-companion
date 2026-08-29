@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 from pydantic import BaseModel
 
 
 class StopUpdate(BaseModel):
- 
+
     stop_sequence: int
     arrival_time: int | None = None
     departure_time: int | None = None

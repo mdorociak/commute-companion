@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID, uuid5
 
-
 # This namespace is part of the public ID algorithm and must remain stable.
 _DEPARTURE_ID_NAMESPACE = UUID("1a41ca26-bd1c-5a7e-96b8-e7cbb350ce24")
 

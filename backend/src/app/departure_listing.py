@@ -4,7 +4,6 @@ from datetime import UTC, datetime, timedelta
 from .gtfs.service_day import QueryWindow
 from .timetable import Departure, Timetable
 
-
 DEFAULT_DEPARTURE_HORIZON = timedelta(hours=24)
 
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import pytest
 
 from app.gtfs_rt.parser import parse_feed

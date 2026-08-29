@@ -5,7 +5,6 @@ import pytest
 
 from app.departure_identity import ScheduledStopEventIdentity
 
-
 IDENTITY = ScheduledStopEventIdentity(
     provider_id="kd",
     service_date=date(2026, 5, 20),

@@ -6,12 +6,15 @@ from pathlib import Path
 
 from .models import ServicePattern
 
+
 class ServiceException(IntEnum):
     ADDED = 1
     REMOVED = 2
 
 def _parse_gtfs_date(value: str) -> date:
-    return datetime.strptime(value.strip(), "%Y%m%d").date()
+    # A GTFS calendar date carries no time and no zone. The naive datetime is
+    # discarded by .date() on the same line, so it never reaches a calculation.
+    return datetime.strptime(value.strip(), "%Y%m%d").date()  # noqa: DTZ007
 
 @dataclass
 class ServiceCalendar:
@@ -24,14 +27,14 @@ class ServiceCalendar:
             return False
         if exception == ServiceException.ADDED:
             return True
-        
+
         pattern = self.patterns.get(service_id)
         if pattern is None:
             return False
         if not (pattern.start_date <= on_date <= pattern.end_date):
             return False
         return pattern.weekdays[on_date.weekday()]
-    
+
 def load_service_calendar(gtfs_dir: Path) -> ServiceCalendar:
     patterns: dict[str, ServicePattern] = {}
     calendar_file = gtfs_dir / "calendar.txt"

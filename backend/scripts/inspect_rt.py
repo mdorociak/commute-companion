@@ -1,5 +1,6 @@
 import sys
 from collections import Counter
+
 from google.transit import gtfs_realtime_pb2
 
 if len(sys.argv) != 2:

@@ -1,6 +1,12 @@
 # Commuter Backend
 
-FastAPI service that parses GTFS (static and real-time) from Koleje Dolnośląskie and MPK Wrocław, normalizes the data, and exposes a REST API consumed by the iOS app.
+FastAPI service that loads static GTFS from Koleje Dolnośląskie (KD), interprets
+it against the GTFS service calendar, and exposes a versioned REST API consumed
+by the iOS app.
+
+GTFS-Realtime parsing exists in `src/app/gtfs_rt/` but is not integrated into
+departure responses. MPK Wrocław integration, connection calculation, feed
+refresh, and freshness metadata are planned, not built.
 
 ## Prerequisites
 

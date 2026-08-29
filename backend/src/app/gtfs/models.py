@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from datetime import date
+
+from pydantic import BaseModel
 
 
 class Platform(BaseModel):
@@ -18,13 +19,13 @@ class Station(BaseModel):
 
 class Route(BaseModel):
     id: str
-    short_name: str 
+    short_name: str
 
 
 class Trip(BaseModel):
     id: str
-    route_id: str  
-    service_id: str  
+    route_id: str
+    service_id: str
     headsign: str | None
 
 class ServicePattern(BaseModel):

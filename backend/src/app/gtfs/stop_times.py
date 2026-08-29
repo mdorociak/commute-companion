@@ -2,6 +2,7 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 
+
 @dataclass(slots=True)
 class StopTime:
     trip_id: str
@@ -40,7 +41,7 @@ def load_stop_times(gtfs_dir: Path) -> dict[str, list[StopTime]]:
                 pickup_type=pickup_type
             )
             by_stop.setdefault(stop_time.stop_id, []).append(stop_time)
-    
+
     for stop_times in by_stop.values():
         stop_times.sort(key=lambda st: st.departure_seconds)
 
