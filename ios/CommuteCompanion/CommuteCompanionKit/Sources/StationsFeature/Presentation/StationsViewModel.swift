@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 enum StationsViewFailure: Equatable, Sendable {
@@ -31,9 +32,7 @@ final class StationsViewModel {
         state = .loading
 
         do {
-            let stations = try await repository.fetchStations(
-                search: nil
-            )
+            let stations = try await repository.fetchStations()
 
             try Task.checkCancellation()
 
@@ -55,12 +54,12 @@ final class StationsViewModel {
     var filteredStations: [Station] {
         guard case let .loaded(stations) = state else { return [] }
 
-        let query = normalizedSearchText
+        let query = normalizedSearchText.foldedForSearch
 
         guard !query.isEmpty else { return stations }
 
         return stations.filter { station in
-            station.name.localizedCaseInsensitiveContains(query)
+            station.name.foldedForSearch.contains(query)
         }
     }
 

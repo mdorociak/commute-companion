@@ -31,32 +31,13 @@ def test_stations_endpoint_returns_all_stations_sorted_by_name() -> None:
     assert names == ["Brzeg", "Brzeg Dolny", "Wrocław Główny"]
 
 
-def test_stations_search_matches_substring_case_insensitively() -> None:
-    app.state.stations = _stub_state()
-    client = TestClient(app)
-    response = client.get("/api/v1/stations?search=brzeg")
-    assert response.status_code == 200
-    names = [s["name"] for s in response.json()]
-    assert names == ["Brzeg", "Brzeg Dolny"]
-
-
-def test_stations_search_with_no_matches_returns_empty_list() -> None:
-    app.state.stations = _stub_state()
-    client = TestClient(app)
-    response = client.get("/api/v1/stations?search=nonexistent")
-    assert response.status_code == 200
-    assert response.json() == []
-
-
 def test_stations_response_includes_platforms() -> None:
     app.state.stations = _stub_state()
     client = TestClient(app)
-    response = client.get("/api/v1/stations?search=brzeg dolny")
-    body = response.json()
-    assert len(body) == 1
-    brzeg = body[0]
-    assert "platforms" in brzeg
-    assert brzeg["platforms"] == []
+    response = client.get("/api/v1/stations")
+    by_name = {station["name"]: station for station in response.json()}
+    assert by_name["Brzeg"]["platforms"] == [{"id": "2333170", "code": "II"}]
+    assert by_name["Brzeg Dolny"]["platforms"] == []
 
 
 def test_unversioned_stops_route_is_not_exposed() -> None:

@@ -35,6 +35,10 @@ The initial public API routes are:
 - `GET /api/v1/stations`
 - `GET /api/v1/stations/{station_id}/departures`
 
+`GET /api/v1/stations` returns every station in one response. The iOS client
+fetches the list once and filters it locally, so there is no server-side
+search parameter.
+
 The health route remains unversioned because it describes the service rather than a product resource.
 
 ## Run tests

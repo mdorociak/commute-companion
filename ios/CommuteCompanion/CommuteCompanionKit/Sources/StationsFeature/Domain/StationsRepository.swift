@@ -6,5 +6,5 @@ enum StationsRepositoryError: Error, Equatable, Sendable {
 }
 
 protocol StationsRepository: Sendable {
-    func fetchStations(search: String?) async throws -> [Station]
+    func fetchStations() async throws -> [Station]
 }

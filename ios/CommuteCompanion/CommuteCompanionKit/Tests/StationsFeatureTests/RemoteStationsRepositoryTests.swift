@@ -7,7 +7,7 @@ import APIClient
 struct RemoteStationsRepositoryTests {
 
     @Test
-    func fetchStationsWithSearchBuildsRequestAndMapsResponse() async throws {
+    func fetchStationsBuildsRequestAndMapsResponse() async throws {
         let json = """
         [
             {
@@ -36,7 +36,7 @@ struct RemoteStationsRepositoryTests {
             apiClient: apiClient
         )
 
-        let stations = try await repository.fetchStations(search: "Brzeg")
+        let stations = try await repository.fetchStations()
 
         let capturedRequest = await transport.lastRequest
         let request = try #require(capturedRequest)
@@ -50,11 +50,7 @@ struct RemoteStationsRepositoryTests {
         )
 
         #expect(components.path == "/api/v1/stations")
-        #expect(
-            components.queryItems?.contains(
-                URLQueryItem(name: "search", value: "Brzeg")
-            ) == true
-        )
+        #expect(components.queryItems == nil)
 
         #expect(
             stations == [
@@ -68,7 +64,7 @@ struct RemoteStationsRepositoryTests {
     }
 
     @Test
-    func fetchStationsWithoutSearchDoesNotAddQueryItems() async throws {
+    func fetchStationsReturnsEmptyArrayForEmptyResponse() async throws {
         let transport = HTTPTransportStub(
             response: HTTPResponse(
                 data: Data("[]".utf8),
@@ -87,21 +83,9 @@ struct RemoteStationsRepositoryTests {
             apiClient: apiClient
         )
 
-        _ = try await repository.fetchStations(search: nil)
+        let stations = try await repository.fetchStations()
 
-        let capturedRequest = await transport.lastRequest
-        let request = try #require(capturedRequest)
-        let url = try #require(request.url)
-
-        let components = try #require(
-            URLComponents(
-                url: url,
-                resolvingAgainstBaseURL: false
-            )
-        )
-
-        #expect(components.path == "/api/v1/stations")
-        #expect(components.queryItems == nil)
+        #expect(stations.isEmpty)
     }
 
     @Test
@@ -118,7 +102,7 @@ struct RemoteStationsRepositoryTests {
         )
 
         await #expect(throws: StationsRepositoryError.unavailable) {
-            try await repository.fetchStations(search: nil)
+            try await repository.fetchStations()
         }
     }
 
@@ -143,7 +127,7 @@ struct RemoteStationsRepositoryTests {
         )
 
         await #expect(throws: StationsRepositoryError.invalidData) {
-            try await repository.fetchStations(search: nil)
+            try await repository.fetchStations()
         }
     }
 
@@ -161,7 +145,7 @@ struct RemoteStationsRepositoryTests {
         )
 
         await #expect(throws: StationsRepositoryError.unexpected) {
-            try await repository.fetchStations(search: nil)
+            try await repository.fetchStations()
         }
     }
 
@@ -179,7 +163,7 @@ struct RemoteStationsRepositoryTests {
         )
 
         await #expect(throws: CancellationError.self) {
-            try await repository.fetchStations(search: nil)
+            try await repository.fetchStations()
         }
     }
 }

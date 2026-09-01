@@ -21,14 +21,11 @@ struct StationsViewModelTests {
             await viewModel.load()
         }
 
-        await repository.waitUntilRequested(search: "")
+        await repository.waitUntilRequested()
 
         #expect(viewModel.state == .loading)
 
-        await repository.complete(
-            search: "",
-            with: .success([station])
-        )
+        await repository.complete(with: .success([station]))
         await loadTask.value
 
         #expect(viewModel.state == .loaded([station]))
@@ -136,6 +133,31 @@ struct StationsViewModelTests {
     }
 
     @Test
+    func searchMatchesAStationNameTypedWithoutDiacritics() async {
+        let wroclaw = Station(
+            id: "wroclaw",
+            name: "Wrocław Główny",
+            code: nil
+        )
+        let brzeg = Station(
+            id: "brzeg",
+            name: "Brzeg",
+            code: nil
+        )
+        let viewModel = StationsViewModel(
+            repository: ImmediateStationsRepository(
+                result: .success([brzeg, wroclaw])
+            )
+        )
+
+        await viewModel.load()
+        viewModel.searchText = "wroclaw"
+
+        #expect(viewModel.hasActiveSearch)
+        #expect(viewModel.filteredStations == [wroclaw])
+    }
+
+    @Test
     func cancelledLoadCannotPublishLateResult() async {
         let repository = ControlledStationsRepository()
         let viewModel = StationsViewModel(repository: repository)
@@ -148,15 +170,12 @@ struct StationsViewModelTests {
         let loadTask = Task {
             await viewModel.load()
         }
-        await repository.waitUntilRequested(search: "")
+        await repository.waitUntilRequested()
 
         loadTask.cancel()
-        await repository.waitUntilCancelled(search: "")
+        await repository.waitUntilCancelled()
 
-        await repository.complete(
-            search: "",
-            with: .success([station])
-        )
+        await repository.complete(with: .success([station]))
         await loadTask.value
 
         #expect(viewModel.state == .loading)
@@ -166,7 +185,7 @@ struct StationsViewModelTests {
 private struct ImmediateStationsRepository: StationsRepository {
     let result: Result<[Station], StationsRepositoryError>
 
-    func fetchStations(search: String?) async throws -> [Station] {
+    func fetchStations() async throws -> [Station] {
         try result.get()
     }
 }
@@ -174,72 +193,62 @@ private struct ImmediateStationsRepository: StationsRepository {
 private actor ControlledStationsRepository: StationsRepository {
     typealias Response = Result<[Station], any Error>
 
-    private var pendingRequests: [
-        String: CheckedContinuation<[Station], any Error>
-    ] = [:]
-    private var requestWaiters: [
-        String: [CheckedContinuation<Void, Never>]
-    ] = [:]
-    private var cancelledSearches: Set<String> = []
-    private var cancellationWaiters: [
-        String: [CheckedContinuation<Void, Never>]
-    ] = [:]
+    private var pendingRequest: CheckedContinuation<[Station], any Error>?
+    private var wasRequested = false
+    private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+    private var wasCancelled = false
+    private var cancellationWaiters: [CheckedContinuation<Void, Never>] = []
 
-    func fetchStations(search: String?) async throws -> [Station] {
-        let search = search ?? ""
-
-        return try await withTaskCancellationHandler {
+    func fetchStations() async throws -> [Station] {
+        try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                pendingRequests[search] = continuation
-                resumeWaiters(for: search, in: &requestWaiters)
+                pendingRequest = continuation
+                wasRequested = true
+
+                for waiter in requestWaiters {
+                    waiter.resume()
+                }
+                requestWaiters.removeAll()
             }
         } onCancel: {
             Task {
-                await self.recordCancellation(search: search)
+                await self.recordCancellation()
             }
         }
     }
 
-    func waitUntilRequested(search: String) async {
-        guard pendingRequests[search] == nil else { return }
+    func waitUntilRequested() async {
+        guard !wasRequested else { return }
 
         await withCheckedContinuation { continuation in
-            requestWaiters[search, default: []].append(continuation)
+            requestWaiters.append(continuation)
         }
     }
 
-    func waitUntilCancelled(search: String) async {
-        guard !cancelledSearches.contains(search) else { return }
+    func waitUntilCancelled() async {
+        guard !wasCancelled else { return }
 
         await withCheckedContinuation { continuation in
-            cancellationWaiters[search, default: []].append(continuation)
+            cancellationWaiters.append(continuation)
         }
     }
 
-    func complete(search: String, with response: Response) {
-        guard let continuation = pendingRequests.removeValue(
-            forKey: search
-        ) else {
-            Issue.record("No pending request for \(search)")
+    func complete(with response: Response) {
+        guard let pendingRequest else {
+            Issue.record("No pending stations request")
             return
         }
 
-        continuation.resume(with: response)
+        self.pendingRequest = nil
+        pendingRequest.resume(with: response)
     }
 
-    private func recordCancellation(search: String) {
-        cancelledSearches.insert(search)
-        resumeWaiters(for: search, in: &cancellationWaiters)
-    }
+    private func recordCancellation() {
+        wasCancelled = true
 
-    private func resumeWaiters(
-        for search: String,
-        in waiters: inout [String: [CheckedContinuation<Void, Never>]]
-    ) {
-        let continuations = waiters.removeValue(forKey: search) ?? []
-
-        for continuation in continuations {
-            continuation.resume()
+        for waiter in cancellationWaiters {
+            waiter.resume()
         }
+        cancellationWaiters.removeAll()
     }
 }
