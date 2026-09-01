@@ -6,14 +6,14 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
-    "gtfs-realtime-bindings>=1.0.0"
+    "gtfs-realtime-bindings>=1.0.0",
+    "tzdata>=2024.1"
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.0",
     "httpx>=0.27",
-    "tzdata>=2024.1",
     "ruff>=0.16"
 ]
 
@@ -32,10 +32,6 @@ pythonpath = ["src"]
 src = ["src"]
 
 [tool.ruff.lint]
-# DTZ (flake8-datetimez) is the point of this selection: naive datetimes in
-# transport calculations are this project's highest-risk defect class, and the
-# linter catches them earlier and more cheaply than a test can. The remaining
-# sets are low-noise correctness and consistency rules.
 select = ["E", "W", "F", "I", "UP", "B", "SIM", "DTZ", "RUF"]
 
 [tool.ruff.lint.isort]

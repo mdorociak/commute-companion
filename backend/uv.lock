@@ -70,6 +70,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "gtfs-realtime-bindings" },
+    { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -78,13 +79,13 @@ dev = [
     { name = "httpx" },
     { name = "pytest" },
     { name = "ruff" },
-    { name = "tzdata" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "gtfs-realtime-bindings", specifier = ">=1.0.0" },
+    { name = "tzdata", specifier = ">=2024.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
 
@@ -93,7 +94,6 @@ dev = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "ruff", specifier = ">=0.16" },
-    { name = "tzdata", specifier = ">=2024.1" },
 ]
 
 [[package]]
