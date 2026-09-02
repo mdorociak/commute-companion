@@ -66,7 +66,7 @@ private struct DeparturesContent: View {
                 "No scheduled departures",
                 systemImage: "clock.badge.xmark",
                 description: Text(
-                    "No departures are scheduled from \(stationName) within the next 24 hours."
+                    "No upcoming scheduled departures from \(stationName)."
                 )
             )
 
@@ -85,7 +85,7 @@ private struct DeparturesContent: View {
                 Text("Scheduled departures")
             } footer: {
                 Text(
-                    "Times are scheduled and shown in Warsaw time. Realtime updates are not available yet."
+                    "Showing the next \(departures.count) scheduled departures in Warsaw time. Later services may not be listed, and realtime updates are not available yet."
                 )
             }
         }
