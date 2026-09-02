@@ -42,9 +42,14 @@ search into a selected station's scheduled departure board.
 - Tram/bus connections at Wrocław Główny (MPK Wrocław integration).
 - Favorites, saved station or commute restoration, and local preferences.
 - Offline caching with explicit cached and stale presentation states.
-- Saved commute *routes* (origin → destination), as opposed to single favorite
-  stops.
-- Commute, Explore, Saved, and Alerts product features.
+- A saved commute: home station, destination, the onward stop and lines to watch
+  at the interchange, and the walking time needed to make the transfer.
+- A small transfer map at the interchange, showing the configured onward stops
+  relative to the station. Not a browsable map of the network.
+
+The application is a commute dashboard rather than a journey planner. Stations
+and lines are chosen once during setup; the daily screen shows the configured
+commute.
 
 Opole is intentionally train-only in the initial product scope. Realtime,
 freshness metadata, caching, and connection calculation must not be presented as
