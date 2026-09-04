@@ -55,20 +55,40 @@ class Timetable:
             default=0,
         )
 
+    def _station_stops(self, station_id: str) -> list[tuple[str, str | None]]:
+        station = self.stations.get(station_id)
+        if station is None:
+            return []
+        if station.platforms:
+            return [(platform.id, platform.code) for platform in station.platforms]
+        return [(station.id, None)]
+
+    def _furthest_call_by_trip(self, station_id: str) -> dict[str, int]:
+        furthest: dict[str, int] = {}
+        for stop_id, _ in self._station_stops(station_id):
+            for stop_time in self.stop_times_by_stop.get(stop_id, []):
+                current = furthest.get(stop_time.trip_id)
+                if current is None or stop_time.stop_sequence > current:
+                    furthest[stop_time.trip_id] = stop_time.stop_sequence
+        return furthest
+
     def departures_in_window(
         self,
         station_id: str,
         window: QueryWindow,
         limit: int = 10,
+        towards_station_id: str | None = None,
     ) -> list[Departure]:
         station = self.stations.get(station_id)
         if station is None or limit <= 0:
             return []
 
-        if station.platforms:
-            targets = [(p.id, p.code) for p in station.platforms]
-        else:
-            targets = [(station.id, None)]
+        origin_stops = self._station_stops(station_id)
+        furthest_call = (
+            None
+            if towards_station_id is None
+            else self._furthest_call_by_trip(towards_station_id)
+        )
 
         candidates: dict[
             tuple[ScheduledStopEventIdentity, datetime],
@@ -79,10 +99,14 @@ class Timetable:
             self.maximum_service_day_seconds,
         )
         for service_date in service_dates:
-            for stop_id, platform_code in targets:
+            for stop_id, platform_code in origin_stops:
                 for stop_time in self.stop_times_by_stop.get(stop_id, []):
                     if stop_time.pickup_type == 1:
                         continue
+                    if furthest_call is not None:
+                        call = furthest_call.get(stop_time.trip_id)
+                        if call is None or call <= stop_time.stop_sequence:
+                            continue
                     trip = self.trips.get(stop_time.trip_id)
                     if trip is None or not self.service_calendar.runs_on(
                         trip.service_id,

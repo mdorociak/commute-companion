@@ -18,6 +18,7 @@ WARSAW = ZoneInfo("Europe/Warsaw")
 
 BRZEG = "2246799"
 BRZEG_DOLNY = "1413092"
+OLAWA = "3000001"
 
 
 def _timetable() -> Timetable:
@@ -42,6 +43,21 @@ def _departures_between(
         station_id,
         QueryWindow(start, end),
         limit=limit,
+    )
+
+
+def _departures_towards(
+    station_id: str,
+    towards: str,
+    start: datetime,
+    end: datetime,
+    limit: int = 10,
+) -> list[Departure]:
+    return _timetable().departures_in_window(
+        station_id,
+        QueryWindow(start, end),
+        limit=limit,
+        towards_station_id=towards,
     )
 
 
@@ -95,6 +111,39 @@ def test_no_pickup_stops_are_excluded() -> None:
         datetime(2026, 5, 20, 16, 0, tzinfo=WARSAW),
     )
     assert [d.line for d in deps] == ["D7"]
+
+
+def test_towards_includes_a_trip_that_terminates_at_the_target_station() -> None:
+    deps = _departures_towards(
+        BRZEG,
+        OLAWA,
+        datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW),
+        datetime(2026, 5, 20, 16, 0, tzinfo=WARSAW),
+    )
+
+    assert [(d.line, d.destination) for d in deps] == [("D7", "Sędzisław")]
+
+
+def test_towards_includes_a_trip_that_calls_at_the_target_twice() -> None:
+    deps = _departures_towards(
+        BRZEG_DOLNY,
+        OLAWA,
+        datetime(2026, 6, 10, 8, 0, tzinfo=WARSAW),
+        datetime(2026, 6, 10, 10, 0, tzinfo=WARSAW),
+    )
+
+    assert [d.destination for d in deps] == ["Oława"]
+
+
+def test_towards_excludes_a_trip_that_passed_the_target_before_the_origin() -> None:
+    start = datetime(2026, 6, 10, 8, 0, tzinfo=WARSAW)
+    end = datetime(2026, 6, 10, 10, 0, tzinfo=WARSAW)
+
+    unfiltered = _departures_between(BRZEG_DOLNY, start, end)
+    towards_olawa = _departures_towards(BRZEG_DOLNY, OLAWA, start, end)
+
+    assert [d.destination for d in unfiltered] == ["Oława", "Brzeg Dolny"]
+    assert [d.destination for d in towards_olawa] == ["Oława"]
 
 
 def test_unknown_station_returns_empty() -> None:

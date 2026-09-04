@@ -5,3 +5,9 @@ trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_t
 11111111_409036,15:00:00,15:00:00,1536298,1,,1
 22222222_409037,25:05:00,25:10:00,2333170,0,,0
 22222222_409037,,,1536298,1,,0
+38645733_409036,06:40:00,06:40:00,3000003,2,,1
+reversal_calls_target_twice,08:00:00,08:00:00,3000002,0,,0
+reversal_calls_target_twice,08:20:00,08:22:00,1474786,1,,0
+reversal_calls_target_twice,08:40:00,08:40:00,3000003,2,,1
+passes_target_before_origin,09:00:00,09:00:00,3000002,0,,0
+passes_target_before_origin,09:20:00,09:22:00,1474786,1,,0

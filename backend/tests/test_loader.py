@@ -7,7 +7,7 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "mock_gtfs"
 
 def test_load_stations_returns_only_stations_not_platforms() -> None:
     stations = load_stations(FIXTURE_DIR)
-    assert len(stations) == 3
+    assert len(stations) == 4
     assert "2246799" in stations
     assert "1413092" in stations
     assert "2333170" not in stations
@@ -48,7 +48,7 @@ def test_load_routes_returns_routes_by_id() -> None:
 
 def test_load_trips_returns_trips_by_id() -> None:
     trips = load_trips(FIXTURE_DIR)
-    assert len(trips) == 3
+    assert len(trips) == 5
     trip = trips["38645733_409036"]
     assert trip.route_id == "249497"
     assert trip.service_id == "WEEKDAYS"

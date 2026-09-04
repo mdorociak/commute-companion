@@ -2,3 +2,5 @@ route_id,service_id,trip_id,trip_headsign,direction_id,block_id
 249497,WEEKDAYS,38645733_409036,Sędzisław,,25400/60461
 249524,WEEKDAYS,11111111_409036,Wrocław Główny,,
 249497,WEEKEND,22222222_409037,,,
+249497,REVERSAL_SCENARIO,reversal_calls_target_twice,Oława,,
+249497,REVERSAL_SCENARIO,passes_target_before_origin,Brzeg Dolny,,
