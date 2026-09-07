@@ -39,6 +39,14 @@ The initial public API routes are:
 fetches the list once and filters it locally, so there is no server-side
 search parameter.
 
+`GET /api/v1/stations/{station_id}/departures` answers `404` when the station
+reference does not resolve, with a body carrying a `code` and the `reference` that
+failed, and otherwise `200` and a JSON array, where an empty array means the
+station is served but has nothing scheduled in the window. ADR-0004 also accepts
+`400` for an onward station equal to the origin; that mapping is registered but
+no request can reach it yet, because `towards` is not exposed as a query
+parameter. The domain and application layers support filtering by onward station.
+
 The health route remains unversioned because it describes the service rather than a product resource.
 
 ## Run tests

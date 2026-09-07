@@ -5,8 +5,16 @@ from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI
 
+from .api.v1.departures import (
+    same_origin_and_destination_error,
+    unknown_station_error,
+)
 from .api.v1.router import router as api_v1_router
-from .departure_listing import ListDepartures
+from .departure_listing import (
+    ListDepartures,
+    SameOriginAndDestination,
+    UnknownStation,
+)
 from .gtfs.loader import load_feed_info, load_routes, load_stations, load_trips
 from .gtfs.models import FeedInfo
 from .gtfs.service_calendar import ServiceCalendar, load_service_calendar
@@ -37,6 +45,11 @@ def health() -> dict[str, str]:
 
 
 app.include_router(api_v1_router)
+app.add_exception_handler(UnknownStation, unknown_station_error)
+app.add_exception_handler(
+    SameOriginAndDestination,
+    same_origin_and_destination_error,
+)
 
 
 def _build_timetable(gtfs_dir: Path) -> Timetable:

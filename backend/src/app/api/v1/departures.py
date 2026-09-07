@@ -3,8 +3,13 @@ from typing import Annotated
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse
 
-from ...departure_listing import ListDepartures
+from ...departure_listing import (
+    ListDepartures,
+    SameOriginAndDestination,
+    UnknownStation,
+)
 from ...timetable import Departure
 
 router = APIRouter()
@@ -18,6 +23,23 @@ def current_time() -> datetime:
 
 def departure_listing(request: Request) -> ListDepartures:
     return request.app.state.departure_listing
+
+
+def unknown_station_error(request: Request, exc: UnknownStation) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={"code": "unknown_station", "reference": exc.reference},
+    )
+
+
+def same_origin_and_destination_error(
+    request: Request,
+    exc: SameOriginAndDestination,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={"code": "same_origin_and_destination", "reference": "towards"},
+    )
 
 
 @router.get("/stations/{station_id}/departures")

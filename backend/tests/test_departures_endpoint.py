@@ -121,11 +121,14 @@ def test_departures_returns_previous_service_day_trip_after_midnight() -> None:
     ]
 
 
-def test_unknown_station_returns_empty_list() -> None:
+def test_unknown_station_returns_not_found_naming_the_reference() -> None:
     client = _client_at(datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW))
     response = client.get(_departures_path("nope"))
-    assert response.status_code == 200
-    assert response.json() == []
+    assert response.status_code == 404
+    assert response.json() == {
+        "code": "unknown_station",
+        "reference": "station_id",
+    }
 
 
 def test_unversioned_departures_route_is_not_exposed() -> None:
