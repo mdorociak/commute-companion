@@ -47,5 +47,6 @@ def list_departures(
     station_id: str,
     listing: Annotated[ListDepartures, Depends(departure_listing)],
     now: Annotated[datetime, Depends(current_time)],
+    towards: str | None = None,
 ) -> list[Departure]:
-    return listing.execute(station_id, now)
+    return listing.execute(station_id, now, towards_station_id=towards)

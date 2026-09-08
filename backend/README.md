@@ -39,13 +39,18 @@ The initial public API routes are:
 fetches the list once and filters it locally, so there is no server-side
 search parameter.
 
-`GET /api/v1/stations/{station_id}/departures` answers `404` when the station
-reference does not resolve, with a body carrying a `code` and the `reference` that
-failed, and otherwise `200` and a JSON array, where an empty array means the
-station is served but has nothing scheduled in the window. ADR-0004 also accepts
-`400` for an onward station equal to the origin; that mapping is registered but
-no request can reach it yet, because `towards` is not exposed as a query
-parameter. The domain and application layers support filtering by onward station.
+`GET /api/v1/stations/{station_id}/departures` takes an optional `towards` query
+parameter naming an onward station, and then lists only trips that call at that
+station later in their sequence.
+
+It answers `404` when a station reference does not resolve, whether that
+reference arrived as the `station_id` path segment or as `towards`, with a body
+carrying a `code` and the `reference` that failed. An empty `towards` value is a
+reference that does not resolve, so it answers `404` too rather than being read
+as an absent filter. A `towards` naming the origin station itself answers `400`.
+Anything resolvable answers `200` and a JSON array, where an empty array means
+the station is served but has nothing scheduled in the window. ADR-0004 is the
+authority on all four outcomes.
 
 The health route remains unversioned because it describes the service rather than a product resource.
 

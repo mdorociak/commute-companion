@@ -17,6 +17,7 @@ from app.timetable import Timetable
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "mock_gtfs"
 WARSAW = ZoneInfo("Europe/Warsaw")
 BRZEG = "2246799"
+OLAWA = "3000001"
 
 
 def _load_timetable() -> Timetable:
@@ -128,6 +129,58 @@ def test_unknown_station_returns_not_found_naming_the_reference() -> None:
     assert response.json() == {
         "code": "unknown_station",
         "reference": "station_id",
+    }
+
+
+def test_towards_limits_the_board_to_trips_calling_at_that_station() -> None:
+    client = _client_at(datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW))
+
+    unfiltered = client.get(_departures_path(BRZEG))
+    filtered = client.get(_departures_path(BRZEG), params={"towards": OLAWA})
+
+    assert unfiltered.status_code == 200
+    assert [departure["line"] for departure in unfiltered.json()] == ["D7", "D1"]
+
+    assert filtered.status_code == 200
+    assert [
+        (departure["line"], departure["departure_time"])
+        for departure in filtered.json()
+    ] == [("D7", "2026-05-20T05:36:00+02:00")]
+
+
+def test_unknown_towards_station_returns_not_found_naming_towards() -> None:
+    client = _client_at(datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW))
+
+    response = client.get(_departures_path(BRZEG), params={"towards": "nope"})
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "code": "unknown_station",
+        "reference": "towards",
+    }
+
+
+def test_towards_equal_to_origin_returns_bad_request() -> None:
+    client = _client_at(datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW))
+
+    response = client.get(_departures_path(BRZEG), params={"towards": BRZEG})
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "code": "same_origin_and_destination",
+        "reference": "towards",
+    }
+
+
+def test_empty_towards_is_an_unresolved_reference_not_an_absent_filter() -> None:
+    client = _client_at(datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW))
+
+    response = client.get(_departures_path(BRZEG), params={"towards": ""})
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "code": "unknown_station",
+        "reference": "towards",
     }
 
 
