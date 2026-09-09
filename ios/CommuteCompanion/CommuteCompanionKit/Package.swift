@@ -41,6 +41,10 @@ let package = Package(
             dependencies: ["APIClient"],
             swiftSettings: baseSettings
         ),
+        .target(
+            name: "Commute",
+            swiftSettings: baseSettings
+        ),
         .testTarget(
             name: "RootTests",
             dependencies: ["Root"],
@@ -65,6 +69,11 @@ let package = Package(
                 "DeparturesFeature",
                 "APIClient",
             ],
+            swiftSettings: baseSettings
+        ),
+        .testTarget(
+            name: "CommuteTests",
+            dependencies: ["Commute"],
             swiftSettings: baseSettings
         )
     ],
