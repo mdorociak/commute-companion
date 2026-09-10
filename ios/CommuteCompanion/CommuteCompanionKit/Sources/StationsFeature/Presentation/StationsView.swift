@@ -15,27 +15,39 @@ public struct StationsView: View {
     }
 
     public var body: some View {
-        content
-            .navigationTitle("Stations")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .searchable(text: $viewModel.searchText, prompt: "Search stations")
-            .task(id: reloadTrigger) {
-                await viewModel.load()
-            }
+        StationsContent(
+            state: viewModel.state,
+            filteredStations: viewModel.filteredStations,
+            hasActiveSearch: viewModel.hasActiveSearch,
+            retry: { reloadTrigger.toggle() }
+        )
+        .navigationTitle("Stations")
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .searchable(text: $viewModel.searchText, prompt: "Search stations")
+        .task(id: reloadTrigger) {
+            await viewModel.load()
+        }
     }
+}
+
+private struct StationsContent: View {
+    let state: StationsViewState
+    let filteredStations: [Station]
+    let hasActiveSearch: Bool
+    let retry: () -> Void
 
     @ViewBuilder
-    private var content: some View {
-        switch viewModel.state {
+    var body: some View {
+        switch state {
         case .idle, .loading:
             ProgressView("Loading stations…")
 
         case .loaded:
-            if viewModel.filteredStations.isEmpty,
-               viewModel.hasActiveSearch {
+            if filteredStations.isEmpty,
+               hasActiveSearch {
                 noMatchingStationsView
             } else {
-                stationsList(viewModel.filteredStations)
+                stationsList(filteredStations)
             }
 
         case .empty:
@@ -85,10 +97,8 @@ public struct StationsView: View {
         } description: {
             Text(failure.message)
         } actions: {
-            Button("Retry") {
-                reloadTrigger.toggle()
-            }
-            .buttonStyle(.borderedProminent)
+            Button("Retry", action: retry)
+                .buttonStyle(.borderedProminent)
         }
     }
 }
@@ -126,4 +136,71 @@ private extension StationsViewFailure {
             "exclamationmark.circle"
         }
     }
+}
+
+private struct StationsStatePreview: View {
+    let state: StationsViewState
+    var filteredStations: [Station] = []
+    var hasActiveSearch = false
+
+    var body: some View {
+        NavigationStack {
+            StationsContent(
+                state: state,
+                filteredStations: filteredStations,
+                hasActiveSearch: hasActiveSearch,
+                retry: {}
+            )
+            .navigationTitle("Stations")
+        }
+    }
+}
+
+private let previewStations = [
+    Station(id: "2246799", name: "Brzeg", code: "11"),
+    Station(id: "1413092", name: "Brzeg Dolny", code: "12"),
+    Station(id: "wroclaw", name: "Wrocław Główny", code: nil),
+]
+
+#Preview("Loading") {
+    StationsStatePreview(state: .loading)
+}
+
+#Preview("Loaded") {
+    StationsStatePreview(
+        state: .loaded(previewStations),
+        filteredStations: previewStations
+    )
+}
+
+#Preview("Loaded – Accessibility text") {
+    StationsStatePreview(
+        state: .loaded(previewStations),
+        filteredStations: previewStations
+    )
+    .environment(\.dynamicTypeSize, .accessibility3)
+}
+
+#Preview("No matching stations") {
+    StationsStatePreview(
+        state: .loaded(previewStations),
+        filteredStations: [],
+        hasActiveSearch: true
+    )
+}
+
+#Preview("Empty") {
+    StationsStatePreview(state: .empty)
+}
+
+#Preview("Unavailable") {
+    StationsStatePreview(state: .failure(.unavailable))
+}
+
+#Preview("Invalid data") {
+    StationsStatePreview(state: .failure(.invalidData))
+}
+
+#Preview("Unexpected failure") {
+    StationsStatePreview(state: .failure(.unexpected))
 }

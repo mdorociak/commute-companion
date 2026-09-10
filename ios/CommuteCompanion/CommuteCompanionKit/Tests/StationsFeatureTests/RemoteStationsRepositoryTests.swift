@@ -132,6 +132,31 @@ struct RemoteStationsRepositoryTests {
     }
 
     @Test
+    func fetchStationsMapsHTTPFailureToUnavailable() async throws {
+        let transport = HTTPTransportStub(
+            response: HTTPResponse(
+                data: Data(),
+                statusCode: 503
+            )
+        )
+
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: transport
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: StationsRepositoryError.unavailable) {
+            try await repository.fetchStations()
+        }
+    }
+
+    @Test
     func fetchStationsMapsUnknownErrorToUnexpected() async throws {
         let baseURL = try #require(URL(string: "https://example.com"))
 
@@ -156,6 +181,24 @@ struct RemoteStationsRepositoryTests {
         let apiClient = APIClient(
             baseURL: baseURL,
             transport: CancellingHTTPTransport()
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: CancellationError.self) {
+            try await repository.fetchStations()
+        }
+    }
+
+    @Test
+    func fetchStationsMapsCancelledURLErrorToCancellation() async throws {
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: CancelledURLHTTPTransport()
         )
 
         let repository = RemoteStationsRepository(
@@ -198,6 +241,12 @@ private struct UnknownFailureHTTPTransport: HTTPTransport {
 private struct CancellingHTTPTransport: HTTPTransport {
     func response(for request: URLRequest) async throws -> HTTPResponse {
         throw CancellationError()
+    }
+}
+
+private struct CancelledURLHTTPTransport: HTTPTransport {
+    func response(for request: URLRequest) async throws -> HTTPResponse {
+        throw URLError(.cancelled)
     }
 }
 

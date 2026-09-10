@@ -6,8 +6,13 @@ import Testing
 struct StationsViewModelTests {
 
     @Test
-    func loadTransitionsFromIdleThroughLoadingToLoaded() async {
-        let station = Station(
+    func loadTransitionsFromIdleThroughLoadingToLoadedAndPreservesOrder() async {
+        let wroclaw = Station(
+            id: "wroclaw",
+            name: "Wrocław Główny",
+            code: nil
+        )
+        let brzeg = Station(
             id: "brzeg",
             name: "Brzeg",
             code: nil
@@ -25,10 +30,15 @@ struct StationsViewModelTests {
 
         #expect(viewModel.state == .loading)
 
-        await repository.complete(with: .success([station]))
+        await repository.complete(with: .success([wroclaw, brzeg]))
         await loadTask.value
 
-        #expect(viewModel.state == .loaded([station]))
+        #expect(
+            viewModel.state == .loaded([
+                wroclaw,
+                brzeg,
+            ])
+        )
     }
 
     @Test
@@ -61,6 +71,17 @@ struct StationsViewModelTests {
 
             #expect(viewModel.state == .failure(viewFailure))
         }
+    }
+
+    @Test
+    func loadMapsUnrelatedErrorToUnexpectedFailure() async {
+        let viewModel = StationsViewModel(
+            repository: UnrelatedErrorStationsRepository()
+        )
+
+        await viewModel.load()
+
+        #expect(viewModel.state == .failure(.unexpected))
     }
 
     @Test
@@ -157,8 +178,10 @@ struct StationsViewModelTests {
         #expect(viewModel.filteredStations == [wroclaw])
     }
 
-    @Test
-    func cancelledLoadCannotPublishLateResult() async {
+    @Test(arguments: LateRepositoryCompletion.allCases)
+    fileprivate func cancelledLoadCannotPublishLateRepositoryCompletion(
+        _ lateCompletion: LateRepositoryCompletion
+    ) async {
         let repository = ControlledStationsRepository()
         let viewModel = StationsViewModel(repository: repository)
         let station = Station(
@@ -175,7 +198,9 @@ struct StationsViewModelTests {
         loadTask.cancel()
         await repository.waitUntilCancelled()
 
-        await repository.complete(with: .success([station]))
+        await repository.complete(
+            with: lateCompletion.response(station: station)
+        )
         await loadTask.value
 
         #expect(viewModel.state == .loading)
@@ -187,6 +212,28 @@ private struct ImmediateStationsRepository: StationsRepository {
 
     func fetchStations() async throws -> [Station] {
         try result.get()
+    }
+}
+
+private struct UnrelatedErrorStationsRepository: StationsRepository {
+    private struct UnrelatedTestError: Error {}
+
+    func fetchStations() async throws -> [Station] {
+        throw UnrelatedTestError()
+    }
+}
+
+private enum LateRepositoryCompletion: CaseIterable, Sendable {
+    case success
+    case failure
+
+    func response(station: Station) -> Result<[Station], any Error> {
+        switch self {
+        case .success:
+            .success([station])
+        case .failure:
+            .failure(StationsRepositoryError.unavailable)
+        }
     }
 }
 
