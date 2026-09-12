@@ -20,23 +20,30 @@ actor SavedCommuteStore {
 
     init(directory: URL) {
         self.directory = directory
-        self.fileURL = directory.appending(path: SavedCommuteStore.fileName)
+        self.fileURL = directory.appending(path: Self.fileName)
     }
 
-    func save(_ commute: SavedCommute) throws {
+    func save(_ commute: SavedCommute) throws(SavedCommuteStoreError) {
+        let envelope = StoredEnvelope(
+            schemaVersion: StoredEnvelope.currentSchemaVersion,
+            commute: commute
+        )
+
         do {
+            let data = try JSONEncoder().encode(envelope)
+
             try FileManager.default.createDirectory(
                 at: directory,
                 withIntermediateDirectories: true
             )
-            let data = try JSONEncoder().encode(commute)
+
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            throw SavedCommuteStoreError.unwritable
+            throw .unwritable
         }
     }
 
-    func load() throws -> StoredCommute {
+    func load() throws(SavedCommuteStoreError) -> StoredCommute {
         guard FileManager.default.fileExists(
             atPath: fileURL.path(percentEncoded: false)
         ) else {
@@ -44,30 +51,32 @@ actor SavedCommuteStore {
         }
 
         let data: Data
+
         do {
             data = try Data(contentsOf: fileURL)
         } catch {
-            throw SavedCommuteStoreError.unreadable
+            throw .unreadable
         }
 
-        let decoder = JSONDecoder()
+        let envelope: StoredEnvelope
 
-        guard let envelope = try? decoder.decode(SchemaEnvelope.self, from: data) else {
-            throw SavedCommuteStoreError.corruptData
+        do {
+            envelope = try JSONDecoder().decode(StoredEnvelope.self, from: data)
+        } catch {
+            throw .corruptData
         }
 
-        guard envelope.schemaVersion == SavedCommute.currentSchemaVersion else {
-            throw SavedCommuteStoreError.incompatibleSchemaVersion(envelope.schemaVersion)
+        guard envelope.schemaVersion == StoredEnvelope.currentSchemaVersion else {
+            throw .incompatibleSchemaVersion(envelope.schemaVersion)
         }
 
-        guard let commute = try? decoder.decode(SavedCommute.self, from: data) else {
-            throw SavedCommuteStoreError.corruptData
-        }
-
-        return .configured(commute)
+        return .configured(envelope.commute)
     }
 }
 
-private struct SchemaEnvelope: Decodable {
+private struct StoredEnvelope: Codable {
+    static let currentSchemaVersion = 1
+
     let schemaVersion: Int
+    let commute: SavedCommute
 }

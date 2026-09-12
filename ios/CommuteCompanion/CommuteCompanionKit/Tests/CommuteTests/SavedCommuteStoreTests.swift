@@ -42,7 +42,7 @@ struct SavedCommuteStoreTests {
     }
 
     @Test
-    func anUnrecognisedSchemaVersionIsRejectedBeforeItsPayloadIsDecoded() async throws {
+    func anUnrecognisedSchemaVersionFailsAsIncompatibleRatherThanCorrupt() async throws {
         let directory = try makeTemporaryDirectory()
         defer { removeDirectory(directory) }
         try writeCommuteFile(
@@ -50,7 +50,13 @@ struct SavedCommuteStoreTests {
                 #"""
                 {
                   "schemaVersion": 99,
-                  "legs": [{ "stationID": "brzeg", "role": "home" }]
+                  "commute": {
+                    "home": { "stationID": "brzeg", "displayName": "Brzeg" },
+                    "destination": {
+                      "stationID": "wroclaw",
+                      "displayName": "Wrocław Główny"
+                    }
+                  }
                 }
                 """#.utf8
             ),
