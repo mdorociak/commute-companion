@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Commute
+@testable import CommuteFeature
 
 @Suite
 struct SavedCommuteStoreTests {

@@ -42,7 +42,7 @@ let package = Package(
             swiftSettings: baseSettings
         ),
         .target(
-            name: "Commute",
+            name: "CommuteFeature",
             swiftSettings: baseSettings
         ),
         .testTarget(
@@ -72,8 +72,8 @@ let package = Package(
             swiftSettings: baseSettings
         ),
         .testTarget(
-            name: "CommuteTests",
-            dependencies: ["Commute"],
+            name: "CommuteFeatureTests",
+            dependencies: ["CommuteFeature"],
             swiftSettings: baseSettings
         )
     ],
