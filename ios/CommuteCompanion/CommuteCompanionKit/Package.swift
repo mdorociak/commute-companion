@@ -23,6 +23,7 @@ let package = Package(
             dependencies: [
                 "StationsFeature",
                 "DeparturesFeature",
+                "CommuteFeature",
                 "APIClient",
             ],
             swiftSettings: baseSettings

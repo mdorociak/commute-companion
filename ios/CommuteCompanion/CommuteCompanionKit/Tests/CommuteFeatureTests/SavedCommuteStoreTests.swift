@@ -45,23 +45,7 @@ struct SavedCommuteStoreTests {
     func anUnrecognisedSchemaVersionFailsAsIncompatibleRatherThanCorrupt() async throws {
         let directory = try makeTemporaryDirectory()
         defer { removeDirectory(directory) }
-        try writeCommuteFile(
-            Data(
-                #"""
-                {
-                  "schemaVersion": 99,
-                  "commute": {
-                    "home": { "stationID": "brzeg", "displayName": "Brzeg" },
-                    "destination": {
-                      "stationID": "wroclaw",
-                      "displayName": "Wrocław Główny"
-                    }
-                  }
-                }
-                """#.utf8
-            ),
-            in: directory
-        )
+        try writeCommuteFile(commuteFileData(schemaVersion: 99), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
         await #expect(throws: SavedCommuteStoreError.incompatibleSchemaVersion(99)) {
@@ -83,37 +67,4 @@ struct SavedCommuteStoreTests {
 
         #expect(loaded == .configured(second))
     }
-}
-
-private func makeTemporaryDirectory() throws -> URL {
-    let directory = FileManager.default.temporaryDirectory
-        .appending(path: "SavedCommuteStoreTests-\(UUID().uuidString)")
-    try FileManager.default.createDirectory(
-        at: directory,
-        withIntermediateDirectories: true
-    )
-    return directory
-}
-
-private func removeDirectory(_ directory: URL) {
-    try? FileManager.default.removeItem(at: directory)
-}
-
-private func writeCommuteFile(_ data: Data, in directory: URL) throws {
-    try data.write(to: directory.appending(path: SavedCommuteStore.fileName))
-}
-
-private extension StationReference {
-    static let brzeg = StationReference(
-        stationID: "brzeg",
-        displayName: "Brzeg"
-    )
-    static let wroclaw = StationReference(
-        stationID: "wroclaw",
-        displayName: "Wrocław Główny"
-    )
-    static let opole = StationReference(
-        stationID: "opole",
-        displayName: "Opole Główne"
-    )
 }

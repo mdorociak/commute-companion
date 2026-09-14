@@ -7,7 +7,10 @@ import Root
 struct CommuteCompanionApp: App {
     var body: some Scene {
         WindowGroup {
-            RootView(baseURL: DevelopmentConfiguration.apiBaseURL)
+            RootView(
+                baseURL: DevelopmentConfiguration.apiBaseURL,
+                commuteDirectory: .applicationSupportDirectory
+            )
         }
     }
 }

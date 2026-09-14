@@ -1,29 +1,29 @@
 import Foundation
 
-enum StoredCommute: Equatable, Sendable {
+public enum StoredCommute: Equatable, Sendable {
     case notConfigured
     case configured(SavedCommute)
 }
 
-enum SavedCommuteStoreError: Error, Equatable, Sendable {
+public enum SavedCommuteStoreError: Error, Equatable, Sendable {
     case unreadable
     case unwritable
     case corruptData
     case incompatibleSchemaVersion(Int)
 }
 
-actor SavedCommuteStore {
+public actor SavedCommuteStore {
     static let fileName = "saved-commute.json"
 
     private let directory: URL
     private let fileURL: URL
 
-    init(directory: URL) {
+    public init(directory: URL) {
         self.directory = directory
         self.fileURL = directory.appending(path: Self.fileName)
     }
 
-    func save(_ commute: SavedCommute) throws(SavedCommuteStoreError) {
+    public func save(_ commute: SavedCommute) throws(SavedCommuteStoreError) {
         let envelope = StoredEnvelope(
             schemaVersion: StoredEnvelope.currentSchemaVersion,
             commute: commute
@@ -43,7 +43,7 @@ actor SavedCommuteStore {
         }
     }
 
-    func load() throws(SavedCommuteStoreError) -> StoredCommute {
+    public func load() throws(SavedCommuteStoreError) -> StoredCommute {
         guard FileManager.default.fileExists(
             atPath: fileURL.path(percentEncoded: false)
         ) else {
