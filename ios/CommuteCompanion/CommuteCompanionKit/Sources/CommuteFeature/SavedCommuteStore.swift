@@ -5,11 +5,15 @@ public enum StoredCommute: Equatable, Sendable {
     case configured(SavedCommute)
 }
 
-public enum SavedCommuteStoreError: Error, Equatable, Sendable {
+public enum SavedCommuteLoadError: Error, Equatable, Sendable {
     case unreadable
-    case unwritable
     case corruptData
     case incompatibleSchemaVersion(Int)
+    case invalidCommute
+}
+
+public enum SavedCommuteSaveError: Error, Equatable, Sendable {
+    case unwritable
 }
 
 public actor SavedCommuteStore {
@@ -23,10 +27,10 @@ public actor SavedCommuteStore {
         self.fileURL = directory.appending(path: Self.fileName)
     }
 
-    public func save(_ commute: SavedCommute) throws(SavedCommuteStoreError) {
+    public func save(_ commute: SavedCommute) throws(SavedCommuteSaveError) {
         let envelope = StoredEnvelope(
             schemaVersion: StoredEnvelope.currentSchemaVersion,
-            commute: commute
+            commute: SavedCommuteDTO(commute)
         )
 
         do {
@@ -43,7 +47,7 @@ public actor SavedCommuteStore {
         }
     }
 
-    public func load() throws(SavedCommuteStoreError) -> StoredCommute {
+    public func load() throws(SavedCommuteLoadError) -> StoredCommute {
         guard FileManager.default.fileExists(
             atPath: fileURL.path(percentEncoded: false)
         ) else {
@@ -80,7 +84,11 @@ public actor SavedCommuteStore {
             throw .corruptData
         }
 
-        return .configured(envelope.commute)
+        guard let commute = envelope.commute.savedCommute else {
+            throw .invalidCommute
+        }
+
+        return .configured(commute)
     }
 }
 
@@ -92,5 +100,36 @@ private struct StoredEnvelope: Codable {
     static let currentSchemaVersion = 1
 
     let schemaVersion: Int
-    let commute: SavedCommute
+    let commute: SavedCommuteDTO
+}
+
+private struct SavedCommuteDTO: Codable {
+    let home: StationReferenceDTO
+    let destination: StationReferenceDTO
+
+    init(_ commute: SavedCommute) {
+        home = StationReferenceDTO(commute.home)
+        destination = StationReferenceDTO(commute.destination)
+    }
+
+    var savedCommute: SavedCommute? {
+        SavedCommute(
+            home: home.stationReference,
+            destination: destination.stationReference
+        )
+    }
+}
+
+private struct StationReferenceDTO: Codable {
+    let stationID: String
+    let displayName: String
+
+    init(_ reference: StationReference) {
+        stationID = reference.stationID
+        displayName = reference.displayName
+    }
+
+    var stationReference: StationReference {
+        StationReference(stationID: stationID, displayName: displayName)
+    }
 }

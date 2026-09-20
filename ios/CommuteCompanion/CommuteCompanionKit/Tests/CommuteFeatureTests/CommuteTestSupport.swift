@@ -36,6 +36,20 @@ func commuteFileData(schemaVersion: Int) -> Data {
     )
 }
 
+func sameStationFileData(schemaVersion: Int) -> Data {
+    Data(
+        """
+        {
+          "schemaVersion": \(schemaVersion),
+          "commute": {
+            "home": { "stationID": "brzeg", "displayName": "Brzeg" },
+            "destination": { "stationID": "brzeg", "displayName": "Brzeg" }
+          }
+        }
+        """.utf8
+    )
+}
+
 func restructuredFileData(schemaVersion: Int) -> Data {
     Data(
         """

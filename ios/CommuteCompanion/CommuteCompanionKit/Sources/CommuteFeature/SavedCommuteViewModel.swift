@@ -3,7 +3,6 @@ import Observation
 public enum SavedCommuteFailure: Equatable, Sendable {
     case unusable
     case unreadable
-    case unexpected
 }
 
 public enum SavedCommuteState: Equatable, Sendable {
@@ -49,16 +48,13 @@ public final class SavedCommuteViewModel {
         }
     }
 
-    private func mapFailure(_ error: SavedCommuteStoreError) -> SavedCommuteFailure {
+    private func mapFailure(_ error: SavedCommuteLoadError) -> SavedCommuteFailure {
         switch error {
-        case .corruptData, .incompatibleSchemaVersion:
+        case .corruptData, .incompatibleSchemaVersion, .invalidCommute:
             .unusable
 
         case .unreadable:
             .unreadable
-
-        case .unwritable:
-            .unexpected
         }
     }
 }

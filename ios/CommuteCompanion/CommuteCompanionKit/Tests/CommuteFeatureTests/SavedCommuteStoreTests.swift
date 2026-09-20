@@ -10,7 +10,9 @@ struct SavedCommuteStoreTests {
         let directory = try makeTemporaryDirectory()
         defer { removeDirectory(directory) }
         let store = SavedCommuteStore(directory: directory)
-        let commute = SavedCommute(home: .brzeg, destination: .wroclaw)
+        let commute = try #require(
+            SavedCommute(home: .brzeg, destination: .wroclaw)
+        )
 
         try await store.save(commute)
         let loaded = try await store.load()
@@ -36,7 +38,7 @@ struct SavedCommuteStoreTests {
         try writeCommuteFile(Data("{ not json".utf8), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
-        await #expect(throws: SavedCommuteStoreError.corruptData) {
+        await #expect(throws: SavedCommuteLoadError.corruptData) {
             try await store.load()
         }
     }
@@ -48,7 +50,7 @@ struct SavedCommuteStoreTests {
         try writeCommuteFile(commuteFileData(schemaVersion: 99), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
-        await #expect(throws: SavedCommuteStoreError.incompatibleSchemaVersion(99)) {
+        await #expect(throws: SavedCommuteLoadError.incompatibleSchemaVersion(99)) {
             try await store.load()
         }
     }
@@ -60,7 +62,7 @@ struct SavedCommuteStoreTests {
         try writeCommuteFile(restructuredFileData(schemaVersion: 99), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
-        await #expect(throws: SavedCommuteStoreError.incompatibleSchemaVersion(99)) {
+        await #expect(throws: SavedCommuteLoadError.incompatibleSchemaVersion(99)) {
             try await store.load()
         }
     }
@@ -72,7 +74,19 @@ struct SavedCommuteStoreTests {
         try writeCommuteFile(restructuredFileData(schemaVersion: 1), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
-        await #expect(throws: SavedCommuteStoreError.corruptData) {
+        await #expect(throws: SavedCommuteLoadError.corruptData) {
+            try await store.load()
+        }
+    }
+
+    @Test
+    func aDocumentNamingOneStationTwiceIsNotACommute() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { removeDirectory(directory) }
+        try writeCommuteFile(sameStationFileData(schemaVersion: 1), in: directory)
+        let store = SavedCommuteStore(directory: directory)
+
+        await #expect(throws: SavedCommuteLoadError.invalidCommute) {
             try await store.load()
         }
     }
@@ -82,8 +96,12 @@ struct SavedCommuteStoreTests {
         let directory = try makeTemporaryDirectory()
         defer { removeDirectory(directory) }
         let store = SavedCommuteStore(directory: directory)
-        let first = SavedCommute(home: .brzeg, destination: .wroclaw)
-        let second = SavedCommute(home: .brzeg, destination: .opole)
+        let first = try #require(
+            SavedCommute(home: .brzeg, destination: .wroclaw)
+        )
+        let second = try #require(
+            SavedCommute(home: .brzeg, destination: .opole)
+        )
 
         try await store.save(first)
         try await store.save(second)

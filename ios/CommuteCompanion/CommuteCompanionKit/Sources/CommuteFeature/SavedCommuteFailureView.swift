@@ -24,9 +24,6 @@ private extension SavedCommuteFailure {
 
         case .unreadable:
             "Saved commute unavailable"
-
-        case .unexpected:
-            "Something went wrong"
         }
     }
 
@@ -37,9 +34,6 @@ private extension SavedCommuteFailure {
 
         case .unreadable:
             "Your saved commute could not be opened. Reopen the app to try again."
-
-        case .unexpected:
-            "An unexpected error occurred while reading your saved commute."
         }
     }
 
@@ -50,9 +44,6 @@ private extension SavedCommuteFailure {
 
         case .unreadable:
             "externaldrive.badge.exclamationmark"
-
-        case .unexpected:
-            "exclamationmark.circle"
         }
     }
 }
@@ -63,8 +54,4 @@ private extension SavedCommuteFailure {
 
 #Preview("Unreadable") {
     SavedCommuteFailureView(failure: .unreadable)
-}
-
-#Preview("Unexpected") {
-    SavedCommuteFailureView(failure: .unexpected)
 }
