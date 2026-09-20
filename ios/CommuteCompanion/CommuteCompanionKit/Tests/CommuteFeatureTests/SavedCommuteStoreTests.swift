@@ -54,6 +54,30 @@ struct SavedCommuteStoreTests {
     }
 
     @Test
+    func anUnrecognisedVersionIsReportedEvenWhenThePayloadIsRestructured() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { removeDirectory(directory) }
+        try writeCommuteFile(restructuredFileData(schemaVersion: 99), in: directory)
+        let store = SavedCommuteStore(directory: directory)
+
+        await #expect(throws: SavedCommuteStoreError.incompatibleSchemaVersion(99)) {
+            try await store.load()
+        }
+    }
+
+    @Test
+    func aRestructuredPayloadAtTheCurrentVersionIsCorrupt() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { removeDirectory(directory) }
+        try writeCommuteFile(restructuredFileData(schemaVersion: 1), in: directory)
+        let store = SavedCommuteStore(directory: directory)
+
+        await #expect(throws: SavedCommuteStoreError.corruptData) {
+            try await store.load()
+        }
+    }
+
+    @Test
     func theSecondSaveIsTheOneThatLoadsBack() async throws {
         let directory = try makeTemporaryDirectory()
         defer { removeDirectory(directory) }

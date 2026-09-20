@@ -58,20 +58,34 @@ public actor SavedCommuteStore {
             throw .unreadable
         }
 
-        let envelope: StoredEnvelope
+        let decoder = JSONDecoder()
+
+        let version: StoredVersion
 
         do {
-            envelope = try JSONDecoder().decode(StoredEnvelope.self, from: data)
+            version = try decoder.decode(StoredVersion.self, from: data)
         } catch {
             throw .corruptData
         }
 
-        guard envelope.schemaVersion == StoredEnvelope.currentSchemaVersion else {
-            throw .incompatibleSchemaVersion(envelope.schemaVersion)
+        guard version.schemaVersion == StoredEnvelope.currentSchemaVersion else {
+            throw .incompatibleSchemaVersion(version.schemaVersion)
+        }
+
+        let envelope: StoredEnvelope
+
+        do {
+            envelope = try decoder.decode(StoredEnvelope.self, from: data)
+        } catch {
+            throw .corruptData
         }
 
         return .configured(envelope.commute)
     }
+}
+
+private struct StoredVersion: Decodable {
+    let schemaVersion: Int
 }
 
 private struct StoredEnvelope: Codable {

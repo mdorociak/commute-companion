@@ -36,6 +36,19 @@ func commuteFileData(schemaVersion: Int) -> Data {
     )
 }
 
+func restructuredFileData(schemaVersion: Int) -> Data {
+    Data(
+        """
+        {
+          "schemaVersion": \(schemaVersion),
+          "legs": [
+            { "from": "brzeg", "to": "wroclaw" }
+          ]
+        }
+        """.utf8
+    )
+}
+
 extension StationReference {
     static let brzeg = StationReference(
         stationID: "brzeg",
