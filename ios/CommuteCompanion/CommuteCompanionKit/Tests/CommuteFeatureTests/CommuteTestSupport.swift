@@ -11,8 +11,15 @@ func makeTemporaryDirectory() throws -> URL {
     return directory
 }
 
-func removeDirectory(_ directory: URL) {
-    try? FileManager.default.removeItem(at: directory)
+func makeTemporaryFile() throws -> URL {
+    let url = FileManager.default.temporaryDirectory
+        .appending(path: "CommuteFeatureTests-\(UUID().uuidString).blocked")
+    try Data().write(to: url)
+    return url
+}
+
+func remove(_ url: URL) {
+    try? FileManager.default.removeItem(at: url)
 }
 
 func writeCommuteFile(_ data: Data, in directory: URL) throws {

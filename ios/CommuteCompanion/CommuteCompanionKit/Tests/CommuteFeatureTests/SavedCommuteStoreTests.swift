@@ -8,7 +8,7 @@ struct SavedCommuteStoreTests {
     @Test
     func aSavedCommuteLoadsBackUnchanged() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         let store = SavedCommuteStore(directory: directory)
         let commute = try #require(
             SavedCommute(home: .brzeg, destination: .wroclaw)
@@ -23,7 +23,7 @@ struct SavedCommuteStoreTests {
     @Test
     func anAbsentFileLoadsAsNotConfiguredRatherThanFailing() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         let store = SavedCommuteStore(directory: directory)
 
         let loaded = try await store.load()
@@ -34,7 +34,7 @@ struct SavedCommuteStoreTests {
     @Test
     func corruptBytesFailAndAreNeverReportedAsNotConfigured() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(Data("{ not json".utf8), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
@@ -46,7 +46,7 @@ struct SavedCommuteStoreTests {
     @Test
     func anUnrecognisedSchemaVersionFailsAsIncompatibleRatherThanCorrupt() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(commuteFileData(schemaVersion: 99), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
@@ -58,7 +58,7 @@ struct SavedCommuteStoreTests {
     @Test
     func anUnrecognisedVersionIsReportedEvenWhenThePayloadIsRestructured() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(restructuredFileData(schemaVersion: 99), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
@@ -70,7 +70,7 @@ struct SavedCommuteStoreTests {
     @Test
     func aRestructuredPayloadAtTheCurrentVersionIsCorrupt() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(restructuredFileData(schemaVersion: 1), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
@@ -82,7 +82,7 @@ struct SavedCommuteStoreTests {
     @Test
     func aDocumentNamingOneStationTwiceIsNotACommute() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(sameStationFileData(schemaVersion: 1), in: directory)
         let store = SavedCommuteStore(directory: directory)
 
@@ -94,7 +94,7 @@ struct SavedCommuteStoreTests {
     @Test
     func theSecondSaveIsTheOneThatLoadsBack() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         let store = SavedCommuteStore(directory: directory)
         let first = try #require(
             SavedCommute(home: .brzeg, destination: .wroclaw)

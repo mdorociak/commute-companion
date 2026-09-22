@@ -9,7 +9,7 @@ struct SavedCommuteViewModelTests {
     @Test
     func anAbsentFileLeavesTheCommuteNotConfigured() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         let viewModel = makeViewModel(directory: directory)
 
         await viewModel.load()
@@ -20,7 +20,7 @@ struct SavedCommuteViewModelTests {
     @Test
     func aSavedCommuteLoadsIntoTheConfiguredState() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         let commute = try #require(
             SavedCommute(home: .brzeg, destination: .wroclaw)
         )
@@ -35,7 +35,7 @@ struct SavedCommuteViewModelTests {
     @Test
     func corruptBytesFailAsUnusableRatherThanNotConfigured() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(Data("{ not json".utf8), in: directory)
         let viewModel = makeViewModel(directory: directory)
 
@@ -47,7 +47,7 @@ struct SavedCommuteViewModelTests {
     @Test
     func aDocumentNamingOneStationTwiceAlsoFailsAsUnusable() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(sameStationFileData(schemaVersion: 1), in: directory)
         let viewModel = makeViewModel(directory: directory)
 
@@ -59,7 +59,7 @@ struct SavedCommuteViewModelTests {
     @Test
     func anUnrecognisedSchemaVersionAlsoFailsAsUnusable() async throws {
         let directory = try makeTemporaryDirectory()
-        defer { removeDirectory(directory) }
+        defer { remove(directory) }
         try writeCommuteFile(commuteFileData(schemaVersion: 99), in: directory)
         let viewModel = makeViewModel(directory: directory)
 
