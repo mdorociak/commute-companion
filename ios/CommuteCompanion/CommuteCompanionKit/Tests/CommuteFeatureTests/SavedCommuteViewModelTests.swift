@@ -33,6 +33,21 @@ struct SavedCommuteViewModelTests {
     }
 
     @Test
+    func aSavedCommuteIsAdoptedWithoutReadingTheStore() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        let commute = try #require(
+            SavedCommute(home: .brzeg, destination: .wroclaw)
+        )
+        let viewModel = makeViewModel(directory: directory)
+
+        await viewModel.load()
+        viewModel.commuteSaved(commute)
+
+        #expect(viewModel.state == .configured(commute))
+    }
+
+    @Test
     func corruptBytesFailAsUnusableRatherThanNotConfigured() async throws {
         let directory = try makeTemporaryDirectory()
         defer { remove(directory) }

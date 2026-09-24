@@ -48,6 +48,10 @@ public final class SavedCommuteViewModel {
         }
     }
 
+    public func commuteSaved(_ commute: SavedCommute) {
+        state = .configured(commute)
+    }
+
     private func mapFailure(_ error: SavedCommuteLoadError) -> SavedCommuteFailure {
         switch error {
         case .corruptData, .incompatibleSchemaVersion, .invalidCommute:
