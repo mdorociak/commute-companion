@@ -7,7 +7,6 @@ public enum CommuteField: Equatable, Sendable {
 
 public enum CommuteSetupReason: Equatable, Sendable {
     case storedCommuteUnusable
-    case replacingStoredCommute
     case stationNoLongerResolves(CommuteField)
 }
 

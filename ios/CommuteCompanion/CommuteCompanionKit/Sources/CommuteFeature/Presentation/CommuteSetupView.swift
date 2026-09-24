@@ -115,9 +115,6 @@ private extension CommuteSetupReason {
         case .storedCommuteUnusable:
             "Your saved commute could not be read. Choose your stations again to replace it."
 
-        case .replacingStoredCommute:
-            "Your saved commute was written by another version of the app. Saving here replaces it."
-
         case .stationNoLongerResolves(.home):
             "Your home station is no longer in the timetable. Choose it again."
 
@@ -130,9 +127,6 @@ private extension CommuteSetupReason {
         switch self {
         case .storedCommuteUnusable:
             "exclamationmark.triangle"
-
-        case .replacingStoredCommute:
-            "arrow.triangle.2.circlepath"
 
         case .stationNoLongerResolves:
             "mappin.slash"
@@ -222,13 +216,6 @@ private let previewCommute = SavedCommute(
 
 #Preview("Stored commute unusable") {
     CommuteSetupPreview(reason: .storedCommuteUnusable)
-}
-
-#Preview("Written by another version") {
-    CommuteSetupPreview(
-        commute: previewCommute,
-        reason: .replacingStoredCommute
-    )
 }
 
 #Preview("Home station gone") {
