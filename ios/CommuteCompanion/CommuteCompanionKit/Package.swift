@@ -48,7 +48,10 @@ let package = Package(
         ),
         .testTarget(
             name: "RootTests",
-            dependencies: ["Root"],
+            dependencies: [
+                "Root",
+                "CommuteFeature",
+            ],
             swiftSettings: baseSettings
         ),
         .testTarget(

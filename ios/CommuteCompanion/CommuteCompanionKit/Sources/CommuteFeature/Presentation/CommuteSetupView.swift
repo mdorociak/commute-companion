@@ -6,6 +6,24 @@ public struct CommuteSetupView<Picker: View>: View {
     private let picker: (@escaping (StationReference) -> Void) -> Picker
 
     public init(
+        store: SavedCommuteStore,
+        commute: SavedCommute? = nil,
+        reason: CommuteSetupReason? = nil,
+        saved: @escaping (SavedCommute) -> Void,
+        @ViewBuilder picker: @escaping (@escaping (StationReference) -> Void) -> Picker
+    ) {
+        _viewModel = State(
+            initialValue: CommuteSetupViewModel(
+                store: store,
+                commute: commute,
+                reason: reason,
+                saved: saved
+            )
+        )
+        self.picker = picker
+    }
+
+    init(
         viewModel: CommuteSetupViewModel,
         @ViewBuilder picker: @escaping (@escaping (StationReference) -> Void) -> Picker
     ) {
