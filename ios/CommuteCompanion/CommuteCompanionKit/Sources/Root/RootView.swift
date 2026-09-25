@@ -11,6 +11,7 @@ public struct RootView: View {
     private let stationsView: StationsView
 
     @State private var savedCommute: SavedCommuteViewModel
+    @State private var reloadTrigger = false
 
     public init(baseURL: URL, commuteDirectory: URL) {
         let apiClient = APIClient(baseURL: baseURL)
@@ -33,7 +34,7 @@ public struct RootView: View {
                     )
                 }
         }
-        .task {
+        .task(id: reloadTrigger) {
             await savedCommute.load()
         }
     }
@@ -51,7 +52,7 @@ public struct RootView: View {
             setupScreen(reason: reason)
 
         case .unreadable:
-            SavedCommuteFailureView(failure: .unreadable)
+            SavedCommuteUnreadableView { reloadTrigger.toggle() }
         }
     }
 
