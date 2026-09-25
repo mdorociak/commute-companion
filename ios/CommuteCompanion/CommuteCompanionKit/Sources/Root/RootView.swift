@@ -50,9 +50,22 @@ public struct RootView: View {
 
         case .setup(let reason):
             setupScreen(reason: reason)
+                .toolbar { browseStations }
 
         case .unreadable:
             SavedCommuteUnreadableView { reloadTrigger.toggle() }
+                .toolbar { browseStations }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var browseStations: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink {
+                stationsView
+            } label: {
+                Label("Stations", systemImage: "list.bullet")
+            }
         }
     }
 
