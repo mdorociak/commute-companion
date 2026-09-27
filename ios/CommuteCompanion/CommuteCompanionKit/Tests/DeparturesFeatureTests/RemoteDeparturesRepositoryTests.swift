@@ -130,6 +130,42 @@ struct RemoteDeparturesRepositoryTests {
     }
 
     @Test
+    func fetchDeparturesMapsAnUnknownOriginToUnknownStation() async throws {
+        let repository = try makeRepository(
+            statusCode: 404,
+            body: #"{"code": "unknown_station", "reference": "station_id"}"#
+        )
+
+        await #expect(throws: DeparturesRepositoryError.unknownStation(.origin)) {
+            try await repository.fetchDepartures(stationID: "2246799")
+        }
+    }
+
+    @Test
+    func fetchDeparturesMapsAnUnknownOnwardStationToUnknownStation() async throws {
+        let repository = try makeRepository(
+            statusCode: 404,
+            body: #"{"code": "unknown_station", "reference": "towards"}"#
+        )
+
+        await #expect(throws: DeparturesRepositoryError.unknownStation(.onward)) {
+            try await repository.fetchDepartures(stationID: "2246799")
+        }
+    }
+
+    @Test
+    func fetchDeparturesTreatsAnUnidentifiedNotFoundAsUnavailable() async throws {
+        let repository = try makeRepository(
+            statusCode: 404,
+            body: "<html>Not Found</html>"
+        )
+
+        await #expect(throws: DeparturesRepositoryError.unavailable) {
+            try await repository.fetchDepartures(stationID: "2246799")
+        }
+    }
+
+    @Test
     func fetchDeparturesMapsUnknownErrorToUnexpected() async throws {
         let baseURL = try #require(URL(string: "https://example.com"))
         let apiClient = APIClient(
@@ -170,6 +206,20 @@ struct RemoteDeparturesRepositoryTests {
             try await repository.fetchDepartures(stationID: "2246799")
         }
     }
+}
+
+private func makeRepository(
+    statusCode: Int,
+    body: String
+) throws -> RemoteDeparturesRepository {
+    let transport = HTTPTransportStub(
+        response: HTTPResponse(data: Data(body.utf8), statusCode: statusCode)
+    )
+    let baseURL = try #require(URL(string: "https://example.com"))
+
+    return RemoteDeparturesRepository(
+        apiClient: APIClient(baseURL: baseURL, transport: transport)
+    )
 }
 
 private actor HTTPTransportStub: HTTPTransport {

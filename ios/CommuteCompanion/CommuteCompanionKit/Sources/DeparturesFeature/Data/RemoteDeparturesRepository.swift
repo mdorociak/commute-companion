@@ -33,6 +33,9 @@ struct RemoteDeparturesRepository: DeparturesRepository {
             case .invalidResponse:
                 throw DeparturesRepositoryError.unavailable
 
+            case .httpStatus(404, let body):
+                throw Self.failure(forNotFound: body)
+
             case .httpStatus:
                 throw DeparturesRepositoryError.unavailable
 
@@ -42,5 +45,21 @@ struct RemoteDeparturesRepository: DeparturesRepository {
         } catch {
             throw DeparturesRepositoryError.unexpected
         }
+    }
+
+    private static func failure(
+        forNotFound body: Data
+    ) -> DeparturesRepositoryError {
+        guard
+            let dto = try? JSONDecoder().decode(
+                DepartureRequestErrorDTO.self,
+                from: body
+            ),
+            let role = dto.unknownStationRole
+        else {
+            return .unavailable
+        }
+
+        return .unknownStation(role)
     }
 }

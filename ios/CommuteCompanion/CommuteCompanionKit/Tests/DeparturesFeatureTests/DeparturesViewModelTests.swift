@@ -74,6 +74,8 @@ struct DeparturesViewModelTests {
         ] = [
             (.unavailable, .unavailable),
             (.invalidData, .invalidData),
+            (.unknownStation(.origin), .unknownStation(.origin)),
+            (.unknownStation(.onward), .unknownStation(.onward)),
             (.unexpected, .unexpected),
         ]
 

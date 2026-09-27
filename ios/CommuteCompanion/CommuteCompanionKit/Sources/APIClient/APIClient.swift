@@ -3,7 +3,7 @@ import Foundation
 public enum APIError: Error, Equatable, LocalizedError, Sendable {
     case invalidURL
     case invalidResponse
-    case httpStatus(Int)
+    case httpStatus(Int, body: Data)
 
     public var errorDescription: String? {
         switch self {
@@ -11,7 +11,7 @@ public enum APIError: Error, Equatable, LocalizedError, Sendable {
             "The request URL is invalid"
         case .invalidResponse:
             "The server returned an invalid response"
-        case .httpStatus(let statusCode):
+        case .httpStatus(let statusCode, _):
             "The server returned HTTP \(statusCode)"
         }
     }
@@ -72,7 +72,7 @@ public struct APIClient: Sendable {
 
         let response = try await transport.response(for: request)
         guard 200..<300 ~= response.statusCode else {
-            throw APIError.httpStatus(response.statusCode)
+            throw APIError.httpStatus(response.statusCode, body: response.data)
         }
 
         return try JSONDecoder().decode(responseType, from: response.data)

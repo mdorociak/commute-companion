@@ -64,6 +64,25 @@ func getRejectsNonSuccessfulStatusCode() async throws {
         let _: Payload = try await client.get(path: "api/v1/stations", as: Payload.self)
         Issue.record("Expected an HTTP status error")
     } catch let error as APIError {
-        #expect(error == .httpStatus(503))
+        #expect(error == .httpStatus(503, body: Data()))
+    }
+}
+
+@Test
+func getCarriesTheBodyOfANonSuccessfulResponse() async throws {
+    let body = Data(#"{"code": "unknown_station"}"#.utf8)
+    let transport = StubTransport { _ in
+        HTTPResponse(data: body, statusCode: 404)
+    }
+    let client = APIClient(
+        baseURL: try #require(URL(string: "https://example.com")),
+        transport: transport
+    )
+
+    do {
+        let _: Payload = try await client.get(path: "api/v1/stations", as: Payload.self)
+        Issue.record("Expected an HTTP status error")
+    } catch let error as APIError {
+        #expect(error == .httpStatus(404, body: body))
     }
 }

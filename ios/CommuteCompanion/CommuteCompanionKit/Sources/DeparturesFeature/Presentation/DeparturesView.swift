@@ -208,6 +208,8 @@ private extension DeparturesViewFailure {
             "Scheduled departures unavailable"
         case .invalidData:
             "Unable to read scheduled departures"
+        case .unknownStation:
+            "Not in the current timetable"
         case .unexpected:
             "Unable to load scheduled departures"
         }
@@ -219,6 +221,10 @@ private extension DeparturesViewFailure {
             "Check your connection and try again."
         case .invalidData:
             "The server response could not be understood. Try again later."
+        case .unknownStation(.origin):
+            "This station is not served by the current timetable."
+        case .unknownStation(.onward):
+            "The station you are heading towards is not in the current timetable."
         case .unexpected:
             "An unexpected error occurred. Try again."
         }
@@ -230,6 +236,8 @@ private extension DeparturesViewFailure {
             "wifi.slash"
         case .invalidData:
             "exclamationmark.triangle"
+        case .unknownStation:
+            "mappin.slash"
         case .unexpected:
             "exclamationmark.circle"
         }
@@ -316,6 +324,10 @@ private struct DeparturesStatePreview: View {
 
 #Preview("Invalid data") {
     DeparturesStatePreview(state: .failure(.invalidData))
+}
+
+#Preview("Unknown station") {
+    DeparturesStatePreview(state: .failure(.unknownStation(.origin)))
 }
 
 #Preview("Unexpected failure") {
