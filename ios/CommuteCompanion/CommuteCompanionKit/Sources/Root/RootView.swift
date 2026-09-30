@@ -12,6 +12,7 @@ public struct RootView: View {
 
     @State private var savedCommute: SavedCommuteViewModel
     @State private var reloadTrigger = false
+    @State private var setupRequest: SetupRequest?
 
     public init(baseURL: URL, commuteDirectory: URL) {
         let apiClient = APIClient(baseURL: baseURL)
@@ -45,8 +46,8 @@ public struct RootView: View {
         case .loading:
             ProgressView("Loading your commute…")
 
-        case .configured:
-            stationsView
+        case .configured(let commute):
+            board(for: commute)
 
         case .setup(let reason):
             setupScreen(reason: reason)
@@ -69,14 +70,58 @@ public struct RootView: View {
         }
     }
 
-    private func setupScreen(reason: CommuteSetupReason?) -> some View {
+    private func board(for commute: SavedCommute) -> some View {
+        let route = DepartureRoute(commute)
+
+        return CommuteBoardView(
+            apiClient: apiClient,
+            route: route,
+            stationNoLongerResolves: { stationID in
+                setupRequest = SetupRequest(
+                    reason: commute.field(forStationID: stationID)
+                        .map(CommuteSetupReason.stationNoLongerResolves)
+                )
+            }
+        )
+        .id(route)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    setupRequest = SetupRequest(reason: nil)
+                } label: {
+                    Label("Edit commute", systemImage: "slider.horizontal.3")
+                }
+            }
+
+            browseStations
+        }
+        .sheet(item: $setupRequest) { request in
+            NavigationStack {
+                setupScreen(commute: commute, reason: request.reason)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                setupRequest = nil
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
+    private func setupScreen(
+        commute: SavedCommute? = nil,
+        reason: CommuteSetupReason?
+    ) -> some View {
         let model = savedCommute
 
         return CommuteSetupView(
             store: store,
+            commute: commute,
             reason: reason,
-            saved: { commute in
-                model.commuteSaved(commute)
+            saved: { newCommute in
+                model.commuteSaved(newCommute)
+                setupRequest = nil
             }
         ) { select in
             StationPickerView(apiClient: apiClient) { station in
@@ -89,4 +134,9 @@ public struct RootView: View {
             }
         }
     }
+}
+
+private struct SetupRequest: Identifiable {
+    let id = UUID()
+    let reason: CommuteSetupReason?
 }

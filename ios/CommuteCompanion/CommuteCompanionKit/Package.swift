@@ -51,6 +51,7 @@ let package = Package(
             dependencies: [
                 "Root",
                 "CommuteFeature",
+                "DeparturesFeature",
             ],
             swiftSettings: baseSettings
         ),

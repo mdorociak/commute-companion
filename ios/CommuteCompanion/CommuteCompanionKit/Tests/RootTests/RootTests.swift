@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import CommuteFeature
+import DeparturesFeature
 @testable import Root
 
 @MainActor @Test
@@ -14,7 +15,38 @@ func rootViewCanBeCreated() throws {
 
 @Test
 func eachSavedCommuteStateRoutesToItsOwnDestination() throws {
-    let commute = try #require(
+    let commute = try makeCommute()
+
+    #expect(RootDestination(.idle) == .loading)
+    #expect(RootDestination(.loading) == .loading)
+    #expect(RootDestination(.notConfigured) == .setup(nil))
+    #expect(RootDestination(.configured(commute)) == .configured(commute))
+    #expect(RootDestination(.failure(.unusable)) == .setup(.storedCommuteUnusable))
+    #expect(RootDestination(.failure(.unreadable)) == .unreadable)
+}
+
+@Test
+func aSavedCommuteBecomesARouteFromHomeTowardsDestination() throws {
+    let route = try DepartureRoute(makeCommute())
+
+    #expect(route.origin == DepartureRoute.Station(id: "brzeg", name: "Brzeg"))
+    #expect(
+        route.destination
+            == DepartureRoute.Station(id: "wroclaw", name: "Wrocław Główny")
+    )
+}
+
+@Test
+func aStationReportedByTheBoardNamesTheFieldItBelongsTo() throws {
+    let commute = try makeCommute()
+
+    #expect(commute.field(forStationID: "brzeg") == .home)
+    #expect(commute.field(forStationID: "wroclaw") == .destination)
+    #expect(commute.field(forStationID: "opole") == nil)
+}
+
+private func makeCommute() throws -> SavedCommute {
+    try #require(
         SavedCommute(
             home: StationReference(stationID: "brzeg", displayName: "Brzeg"),
             destination: StationReference(
@@ -23,11 +55,4 @@ func eachSavedCommuteStateRoutesToItsOwnDestination() throws {
             )
         )
     )
-
-    #expect(RootDestination(.idle) == .loading)
-    #expect(RootDestination(.loading) == .loading)
-    #expect(RootDestination(.notConfigured) == .setup(nil))
-    #expect(RootDestination(.configured(commute)) == .configured(commute))
-    #expect(RootDestination(.failure(.unusable)) == .setup(.storedCommuteUnusable))
-    #expect(RootDestination(.failure(.unreadable)) == .unreadable)
 }

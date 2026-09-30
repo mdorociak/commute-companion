@@ -27,12 +27,18 @@ completed functionality.
   states.
 - **Navigation:** typed station selection composed by `Root` into the scheduled
   departures feature without coupling the feature targets to one another.
+- **Saved commute:** a home station and a destination, chosen once on first
+  launch and editable later, stored locally in a versioned format. The app opens
+  on the commute's scheduled departures from home towards the destination, and a
+  station that drops out of the timetable leads back to setup with that row
+  flagged.
 - **Continuous integration:** GitHub Actions runs the deterministic backend
   tests, builds the iOS app with Xcode 26.6, and runs the aggregate
   `CommuteCompanionKit` test scheme on an iOS Simulator.
 
-The iOS app now supports an API-backed journey from station discovery and local
-search into a selected station's scheduled departure board.
+The iOS app opens on the configured commute's scheduled departure board. Station
+discovery and local search remain available from every screen for checking any
+other station's scheduled departures.
 
 ---
 
@@ -40,10 +46,10 @@ search into a selected station's scheduled departure board.
 
 - Realtime delays and vehicle positions integrated into departure responses.
 - Tram/bus connections at Wrocław Główny (MPK Wrocław integration).
-- Favorites, saved station or commute restoration, and local preferences.
+- Favorites, saved station restoration, and local preferences.
 - Offline caching with explicit cached and stale presentation states.
-- A saved commute: home station, destination, the onward stop and lines to watch
-  at the interchange, and the walking time needed to make the transfer.
+- Extending the saved commute with the onward stop and lines to watch at the
+  interchange, and the walking time needed to make the transfer.
 - A small transfer map at the interchange, showing the configured onward stops
   relative to the station. Not a browsable map of the network.
 

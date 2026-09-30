@@ -1,5 +1,5 @@
-public struct DepartureRoute: Equatable, Sendable {
-    public struct Station: Equatable, Sendable {
+public struct DepartureRoute: Hashable, Sendable {
+    public struct Station: Hashable, Sendable {
         public let id: String
         public let name: String
 
