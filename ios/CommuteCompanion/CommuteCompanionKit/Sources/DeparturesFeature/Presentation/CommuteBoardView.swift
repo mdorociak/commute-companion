@@ -1,50 +1,49 @@
-import Foundation
 import SwiftUI
 import APIClient
 
-public struct DeparturesView: View {
-    private let stationName: String
+public struct CommuteBoardView: View {
+    private let route: DepartureRoute
+    private let stationNoLongerResolves: (String) -> Void
 
     @State private var viewModel: DeparturesViewModel
     @State private var reloadTrigger = false
 
     public init(
         apiClient: APIClient,
-        stationID: String,
-        stationName: String
+        route: DepartureRoute,
+        stationNoLongerResolves: @escaping (String) -> Void
     ) {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
-        self.stationName = stationName
+        self.route = route
+        self.stationNoLongerResolves = stationNoLongerResolves
         _viewModel = State(
             initialValue: DeparturesViewModel(
-                query: DepartureQuery(stationID: stationID),
+                query: DepartureQuery(route),
                 repository: repository
             )
         )
     }
 
-    init(
-        stationName: String,
-        viewModel: DeparturesViewModel
-    ) {
-        self.stationName = stationName
-        _viewModel = State(initialValue: viewModel)
-    }
-
     public var body: some View {
         DeparturesContent(
-            originName: stationName,
-            destinationName: nil,
+            originName: route.origin.name,
+            destinationName: route.destination.name,
             state: viewModel.state,
-            chooseAgain: nil,
+            chooseAgain: { role in
+                stationNoLongerResolves(route.station(for: role).id)
+            },
             retry: { reloadTrigger.toggle() }
         )
-        .navigationTitle(stationName)
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: reloadTrigger) {
             await viewModel.load()
         }
+    }
+
+    private var title: String {
+        "\(route.origin.name) → \(route.destination.name)"
     }
 }
