@@ -18,7 +18,7 @@ public struct DeparturesView: View {
         self.stationName = stationName
         _viewModel = State(
             initialValue: DeparturesViewModel(
-                stationID: stationID,
+                query: DepartureQuery(stationID: stationID),
                 repository: repository
             )
         )

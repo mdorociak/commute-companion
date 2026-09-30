@@ -8,10 +8,11 @@ struct RemoteDeparturesRepository: DeparturesRepository {
         self.apiClient = apiClient
     }
 
-    func fetchDepartures(stationID: String) async throws -> [Departure] {
+    func fetchDepartures(query: DepartureQuery) async throws -> [Departure] {
         do {
             let dtos = try await apiClient.get(
-                path: "api/v1/stations/\(stationID)/departures",
+                path: "api/v1/stations/\(query.stationID)/departures",
+                queryItems: Self.queryItems(for: query),
                 as: [DepartureDTO].self
             )
 
@@ -45,6 +46,12 @@ struct RemoteDeparturesRepository: DeparturesRepository {
         } catch {
             throw DeparturesRepositoryError.unexpected
         }
+    }
+
+    private static func queryItems(for query: DepartureQuery) -> [URLQueryItem] {
+        guard let towards = query.towardsStationID else { return [] }
+
+        return [URLQueryItem(name: "towards", value: towards)]
     }
 
     private static func failure(

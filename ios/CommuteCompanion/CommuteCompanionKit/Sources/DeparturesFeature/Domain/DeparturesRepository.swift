@@ -11,5 +11,5 @@ enum DeparturesRepositoryError: Error, Equatable, Sendable {
 }
 
 protocol DeparturesRepository: Sendable {
-    func fetchDepartures(stationID: String) async throws -> [Departure]
+    func fetchDepartures(query: DepartureQuery) async throws -> [Departure]
 }

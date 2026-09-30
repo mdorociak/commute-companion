@@ -34,7 +34,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         let departures = try await repository.fetchDepartures(
-            stationID: "2246799"
+            query: DepartureQuery(stationID: "2246799")
         )
 
         let capturedRequest = await transport.lastRequest
@@ -54,6 +54,57 @@ struct RemoteDeparturesRepositoryTests {
     }
 
     @Test
+    func fetchDeparturesSendsTheOnwardStationWhenThereIsOne() async throws {
+        let transport = HTTPTransportStub(
+            response: HTTPResponse(data: Data("[]".utf8), statusCode: 200)
+        )
+        let baseURL = try #require(URL(string: "https://example.com"))
+        let repository = RemoteDeparturesRepository(
+            apiClient: APIClient(baseURL: baseURL, transport: transport)
+        )
+
+        _ = try await repository.fetchDepartures(
+            query: DepartureQuery(
+                stationID: "2246799",
+                towardsStationID: "wroclaw"
+            )
+        )
+
+        let capturedRequest = await transport.lastRequest
+        let request = try #require(capturedRequest)
+        let url = try #require(request.url)
+        let components = try #require(
+            URLComponents(url: url, resolvingAgainstBaseURL: false)
+        )
+
+        #expect(url.path == "/api/v1/stations/2246799/departures")
+        #expect(components.queryItems == [
+            URLQueryItem(name: "towards", value: "wroclaw")
+        ])
+    }
+
+    @Test
+    func fetchDeparturesOmitsTowardsWhenThereIsNoOnwardStation() async throws {
+        let transport = HTTPTransportStub(
+            response: HTTPResponse(data: Data("[]".utf8), statusCode: 200)
+        )
+        let baseURL = try #require(URL(string: "https://example.com"))
+        let repository = RemoteDeparturesRepository(
+            apiClient: APIClient(baseURL: baseURL, transport: transport)
+        )
+
+        _ = try await repository.fetchDepartures(
+            query: DepartureQuery(stationID: "2246799")
+        )
+
+        let capturedRequest = await transport.lastRequest
+        let request = try #require(capturedRequest)
+        let url = try #require(request.url)
+
+        #expect(url.query == nil)
+    }
+
+    @Test
     func fetchDeparturesReturnsEmptyArrayForEmptyResponse() async throws {
         let transport = HTTPTransportStub(
             response: HTTPResponse(
@@ -69,7 +120,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         let departures = try await repository.fetchDepartures(
-            stationID: "2246799"
+            query: DepartureQuery(stationID: "2246799")
         )
 
         #expect(departures.isEmpty)
@@ -91,7 +142,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         await #expect(throws: DeparturesRepositoryError.invalidData) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -105,7 +156,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         await #expect(throws: DeparturesRepositoryError.unavailable) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -125,7 +176,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         await #expect(throws: DeparturesRepositoryError.unavailable) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -137,7 +188,7 @@ struct RemoteDeparturesRepositoryTests {
         )
 
         await #expect(throws: DeparturesRepositoryError.unknownStation(.origin)) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -149,7 +200,7 @@ struct RemoteDeparturesRepositoryTests {
         )
 
         await #expect(throws: DeparturesRepositoryError.unknownStation(.onward)) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -161,7 +212,7 @@ struct RemoteDeparturesRepositoryTests {
         )
 
         await #expect(throws: DeparturesRepositoryError.unavailable) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -175,7 +226,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         await #expect(throws: DeparturesRepositoryError.unexpected) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -189,7 +240,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         await #expect(throws: CancellationError.self) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
@@ -203,7 +254,7 @@ struct RemoteDeparturesRepositoryTests {
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
         await #expect(throws: CancellationError.self) {
-            try await repository.fetchDepartures(stationID: "2246799")
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 }

@@ -18,16 +18,16 @@ enum DeparturesViewState: Equatable, Sendable {
 @MainActor
 @Observable
 final class DeparturesViewModel {
-    private let stationID: String
+    private let query: DepartureQuery
     private let repository: any DeparturesRepository
 
     private(set) var state: DeparturesViewState = .idle
 
     init(
-        stationID: String,
+        query: DepartureQuery,
         repository: any DeparturesRepository
     ) {
-        self.stationID = stationID
+        self.query = query
         self.repository = repository
     }
 
@@ -36,7 +36,7 @@ final class DeparturesViewModel {
 
         do {
             let departures = try await repository.fetchDepartures(
-                stationID: stationID
+                query: query
             )
 
             try Task.checkCancellation()

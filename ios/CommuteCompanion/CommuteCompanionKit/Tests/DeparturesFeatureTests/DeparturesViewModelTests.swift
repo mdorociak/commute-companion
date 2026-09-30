@@ -24,7 +24,7 @@ struct DeparturesViewModelTests {
         )
         let repository = ControlledDeparturesRepository()
         let viewModel = DeparturesViewModel(
-            stationID: "2246799",
+            query: DepartureQuery(stationID: "2246799"),
             repository: repository
         )
 
@@ -58,7 +58,7 @@ struct DeparturesViewModelTests {
             result: .success([])
         )
         let viewModel = DeparturesViewModel(
-            stationID: "2246799",
+            query: DepartureQuery(stationID: "2246799"),
             repository: repository
         )
 
@@ -84,7 +84,7 @@ struct DeparturesViewModelTests {
                 result: .failure(repositoryError)
             )
             let viewModel = DeparturesViewModel(
-                stationID: "2246799",
+                query: DepartureQuery(stationID: "2246799"),
                 repository: repository
             )
 
@@ -97,7 +97,7 @@ struct DeparturesViewModelTests {
     @Test
     func loadMapsUnrelatedErrorToUnexpectedFailure() async {
         let viewModel = DeparturesViewModel(
-            stationID: "2246799",
+            query: DepartureQuery(stationID: "2246799"),
             repository: UnrelatedErrorDeparturesRepository()
         )
 
@@ -119,7 +119,7 @@ struct DeparturesViewModelTests {
         )
         let repository = ControlledDeparturesRepository()
         let viewModel = DeparturesViewModel(
-            stationID: "2246799",
+            query: DepartureQuery(stationID: "2246799"),
             repository: repository
         )
 
@@ -143,7 +143,7 @@ struct DeparturesViewModelTests {
 private struct ImmediateDeparturesRepository: DeparturesRepository {
     let result: Result<[Departure], DeparturesRepositoryError>
 
-    func fetchDepartures(stationID: String) async throws -> [Departure] {
+    func fetchDepartures(query: DepartureQuery) async throws -> [Departure] {
         try result.get()
     }
 }
@@ -151,7 +151,7 @@ private struct ImmediateDeparturesRepository: DeparturesRepository {
 private struct UnrelatedErrorDeparturesRepository: DeparturesRepository {
     private struct UnrelatedTestError: Error {}
 
-    func fetchDepartures(stationID: String) async throws -> [Departure] {
+    func fetchDepartures(query: DepartureQuery) async throws -> [Departure] {
         throw UnrelatedTestError()
     }
 }
@@ -188,14 +188,14 @@ private actor ControlledDeparturesRepository: DeparturesRepository {
         CheckedContinuation<Void, Never>
     ] = []
 
-    func fetchDepartures(stationID: String) async throws -> [Departure] {
+    func fetchDepartures(query: DepartureQuery) async throws -> [Departure] {
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 pendingRequest = continuation
-                requestedStationID = stationID
+                requestedStationID = query.stationID
 
                 for waiter in requestWaiters {
-                    waiter.resume(returning: stationID)
+                    waiter.resume(returning: query.stationID)
                 }
                 requestWaiters.removeAll()
             }
