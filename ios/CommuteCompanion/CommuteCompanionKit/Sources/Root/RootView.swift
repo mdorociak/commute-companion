@@ -13,6 +13,7 @@ public struct RootView: View {
     @State private var savedCommute: SavedCommuteViewModel
     @State private var reloadTrigger = false
     @State private var setupRequest: SetupRequest?
+    @State private var isReversed = false
 
     public init(baseURL: URL, commuteDirectory: URL) {
         let apiClient = APIClient(baseURL: baseURL)
@@ -71,11 +72,13 @@ public struct RootView: View {
     }
 
     private func board(for commute: SavedCommute) -> some View {
-        let route = DepartureRoute(commute)
+        let outbound = DepartureRoute(commute)
+        let route = isReversed ? outbound.reversed : outbound
 
         return CommuteBoardView(
             apiClient: apiClient,
             route: route,
+            reverse: { isReversed.toggle() },
             stationNoLongerResolves: { stationID in
                 setupRequest = SetupRequest(
                     reason: commute.field(forStationID: stationID)

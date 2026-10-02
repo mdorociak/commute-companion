@@ -45,6 +45,15 @@ func aStationReportedByTheBoardNamesTheFieldItBelongsTo() throws {
     #expect(commute.field(forStationID: "opole") == nil)
 }
 
+@Test
+func aStationReportedByAReversedBoardStillNamesItsOwnField() throws {
+    let commute = try makeCommute()
+    let reversed = DepartureRoute(commute).reversed
+
+    #expect(commute.field(forStationID: reversed.origin.id) == .destination)
+    #expect(commute.field(forStationID: reversed.destination.id) == .home)
+}
+
 private func makeCommute() throws -> SavedCommute {
     try #require(
         SavedCommute(

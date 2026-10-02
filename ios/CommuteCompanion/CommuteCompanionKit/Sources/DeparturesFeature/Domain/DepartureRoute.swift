@@ -17,6 +17,10 @@ public struct DepartureRoute: Hashable, Sendable {
         self.destination = destination
     }
 
+    public var reversed: DepartureRoute {
+        DepartureRoute(origin: destination, destination: origin)
+    }
+
     func station(for role: DepartureStationRole) -> Station {
         switch role {
         case .origin:

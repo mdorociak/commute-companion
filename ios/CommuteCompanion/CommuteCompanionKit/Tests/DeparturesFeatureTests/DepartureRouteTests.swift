@@ -17,6 +17,17 @@ struct DepartureRouteTests {
     }
 
     @Test
+    func aReversedRouteRunsFromItsDestinationBackToItsOrigin() {
+        #expect(route.reversed.origin == route.destination)
+        #expect(route.reversed.destination == route.origin)
+        #expect(route.reversed.reversed == route)
+        #expect(
+            DepartureQuery(route.reversed)
+                == DepartureQuery(stationID: "wroclaw", towardsStationID: "brzeg")
+        )
+    }
+
+    @Test
     func anUnknownStationRoleNamesTheStationOfTheRoute() {
         #expect(route.station(for: .origin).id == "brzeg")
         #expect(route.station(for: .onward).id == "wroclaw")
