@@ -7,21 +7,18 @@ import StationsFeature
 
 public struct RootView: View {
     private let apiClient: APIClient
-    private let store: SavedCommuteStore
-    private let stationsView: StationsView
 
+    @State private var store: SavedCommuteStore
     @State private var savedCommute: SavedCommuteViewModel
     @State private var reloadTrigger = false
     @State private var setupRequest: SetupRequest?
     @State private var isReversed = false
 
     public init(baseURL: URL, commuteDirectory: URL) {
-        let apiClient = APIClient(baseURL: baseURL)
         let store = SavedCommuteStore(directory: commuteDirectory)
 
-        self.apiClient = apiClient
-        self.store = store
-        stationsView = StationsView(apiClient: apiClient)
+        apiClient = APIClient(baseURL: baseURL)
+        _store = State(initialValue: store)
         _savedCommute = State(initialValue: SavedCommuteViewModel(store: store))
     }
 
@@ -34,6 +31,12 @@ public struct RootView: View {
                         stationID: station.id,
                         stationName: station.name
                     )
+                }
+                .navigationDestination(for: RootRoute.self) { route in
+                    switch route {
+                    case .stations:
+                        StationsView(apiClient: apiClient)
+                    }
                 }
         }
         .task(id: reloadTrigger) {
@@ -63,9 +66,7 @@ public struct RootView: View {
     @ToolbarContentBuilder
     private var browseStations: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            NavigationLink {
-                stationsView
-            } label: {
+            NavigationLink(value: RootRoute.stations) {
                 Label("Stations", systemImage: "list.bullet")
             }
         }
@@ -142,4 +143,8 @@ public struct RootView: View {
 private struct SetupRequest: Identifiable {
     let id = UUID()
     let reason: CommuteSetupReason?
+}
+
+private enum RootRoute: Hashable {
+    case stations
 }
