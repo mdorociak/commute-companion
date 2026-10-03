@@ -30,6 +30,7 @@ public struct StationPickerView: View {
         .navigationTitle("Choose a station")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .searchable(text: $viewModel.searchText, prompt: "Search stations")
+        .searchPresentationToolbarBehavior(.avoidHidingContent)
         .task(id: reloadTrigger) {
             await viewModel.load()
         }

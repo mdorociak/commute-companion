@@ -25,6 +25,7 @@ public struct StationsView: View {
         .navigationTitle("Stations")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .searchable(text: $viewModel.searchText, prompt: "Search stations")
+        .searchPresentationToolbarBehavior(.avoidHidingContent)
         .task(id: reloadTrigger) {
             await viewModel.load()
         }
