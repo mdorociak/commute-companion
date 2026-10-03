@@ -31,7 +31,8 @@ completed functionality.
   launch and editable later, stored locally in a versioned format. The app opens
   on the commute's scheduled departures from home towards the destination,
   reversible from the board's title for the journey back, and a station that
-  drops out of the timetable leads back to setup with that row flagged.
+  drops out of the timetable leads back to setup with a message saying whether
+  the home station or the destination is no longer in the timetable.
 - **Continuous integration:** GitHub Actions runs the deterministic backend
   tests, builds the iOS app with Xcode 26.6, and runs the aggregate
   `CommuteCompanionKit` test scheme on an iOS Simulator.
