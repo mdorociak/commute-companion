@@ -89,7 +89,7 @@ struct RemoteStationsRepositoryTests {
     }
 
     @Test
-    func fetchStationsMapsOfflineErrorToUnavailable() async throws {
+    func fetchStationsMapsOfflineErrorToUnreachable() async throws {
         let baseURL = try #require(URL(string: "https://example.com"))
 
         let apiClient = APIClient(
@@ -101,7 +101,7 @@ struct RemoteStationsRepositoryTests {
             apiClient: apiClient
         )
 
-        await #expect(throws: StationsRepositoryError.unavailable) {
+        await #expect(throws: StationsRepositoryError.unreachable) {
             try await repository.fetchStations()
         }
     }
@@ -131,12 +131,14 @@ struct RemoteStationsRepositoryTests {
         }
     }
 
-    @Test
-    func fetchStationsMapsHTTPFailureToUnavailable() async throws {
+    @Test(arguments: [400, 404, 500, 503])
+    func fetchStationsMapsAnErrorResponseToServerFailure(
+        statusCode: Int
+    ) async throws {
         let transport = HTTPTransportStub(
             response: HTTPResponse(
                 data: Data(),
-                statusCode: 503
+                statusCode: statusCode
             )
         )
 
@@ -151,7 +153,25 @@ struct RemoteStationsRepositoryTests {
             apiClient: apiClient
         )
 
-        await #expect(throws: StationsRepositoryError.unavailable) {
+        await #expect(throws: StationsRepositoryError.serverFailure) {
+            try await repository.fetchStations()
+        }
+    }
+
+    @Test
+    func fetchStationsMapsANonHTTPResponseToInvalidData() async throws {
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: NonHTTPResponseTransport()
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: StationsRepositoryError.invalidData) {
             try await repository.fetchStations()
         }
     }
@@ -229,6 +249,12 @@ private actor HTTPTransportStub: HTTPTransport {
 private struct OfflineHTTPTransport: HTTPTransport {
     func response(for request: URLRequest) async throws -> HTTPResponse {
         throw URLError(.notConnectedToInternet)
+    }
+}
+
+private struct NonHTTPResponseTransport: HTTPTransport {
+    func response(for request: URLRequest) async throws -> HTTPResponse {
+        throw APIError.invalidResponse
     }
 }
 

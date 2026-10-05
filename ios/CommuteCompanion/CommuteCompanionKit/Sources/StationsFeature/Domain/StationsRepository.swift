@@ -1,6 +1,7 @@
 
 enum StationsRepositoryError: Error, Equatable, Sendable {
-    case unavailable
+    case unreachable
+    case serverFailure
     case invalidData
     case unexpected
 }

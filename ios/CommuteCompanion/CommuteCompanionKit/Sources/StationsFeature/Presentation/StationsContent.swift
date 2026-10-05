@@ -104,7 +104,7 @@ struct StationsContent: View {
 private extension StationsViewFailure {
     var title: LocalizedStringResource {
         switch self {
-        case .unavailable:
+        case .unreachable, .serverFailure:
             "Stations unavailable"
         case .invalidData:
             "Unable to read station data"
@@ -115,8 +115,10 @@ private extension StationsViewFailure {
 
     var message: LocalizedStringResource {
         switch self {
-        case .unavailable:
-            "Check your connection and try again."
+        case .unreachable:
+            "The server could not be reached. Check your connection and try again."
+        case .serverFailure:
+            "The server could not provide stations right now. Try again later."
         case .invalidData:
             "The server response could not be understood. Try again later."
         case .unexpected:
@@ -126,8 +128,10 @@ private extension StationsViewFailure {
 
     var systemImage: String {
         switch self {
-        case .unavailable:
+        case .unreachable:
             "wifi.slash"
+        case .serverFailure:
+            "exclamationmark.icloud"
         case .invalidData:
             "exclamationmark.triangle"
         case .unexpected:
@@ -213,8 +217,12 @@ private let previewStations = [
     StationsStatePreview(state: .empty)
 }
 
-#Preview("Unavailable") {
-    StationsStatePreview(state: .failure(.unavailable))
+#Preview("Unreachable") {
+    StationsStatePreview(state: .failure(.unreachable))
+}
+
+#Preview("Server failure") {
+    StationsStatePreview(state: .failure(.serverFailure))
 }
 
 #Preview("Invalid data") {

@@ -4,7 +4,8 @@ enum DepartureStationRole: Equatable, Sendable {
 }
 
 enum DeparturesRepositoryError: Error, Equatable, Sendable {
-    case unavailable
+    case unreachable
+    case serverFailure
     case invalidData
     case unknownStation(DepartureStationRole)
     case unexpected

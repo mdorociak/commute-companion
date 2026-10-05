@@ -20,27 +20,26 @@ struct RemoteStationsRepository: StationsRepository {
             return dtos.map { $0.toDomain() }
         } catch is CancellationError {
             throw CancellationError()
-        } catch let error as URLError {
-            if error.code == .cancelled {
-                throw CancellationError()
-            }
-
-            throw StationsRepositoryError.unavailable
-        } catch is DecodingError {
-            throw StationsRepositoryError.invalidData
         } catch let error as APIError {
-            switch error {
-            case .invalidResponse:
-                throw StationsRepositoryError.unavailable
-
-            case .httpStatus:
-                throw StationsRepositoryError.unavailable
-
-            case .invalidURL:
-                throw StationsRepositoryError.unexpected
-            }
+            throw Self.failure(for: error)
         } catch {
             throw StationsRepositoryError.unexpected
+        }
+    }
+
+    private static func failure(for error: APIError) -> StationsRepositoryError {
+        switch error {
+        case .unreachable:
+            .unreachable
+
+        case .httpStatus:
+            .serverFailure
+
+        case .invalidResponse, .decoding:
+            .invalidData
+
+        case .invalidURL:
+            .unexpected
         }
     }
 }

@@ -86,3 +86,87 @@ func getCarriesTheBodyOfANonSuccessfulResponse() async throws {
         #expect(error == .httpStatus(404, body: body))
     }
 }
+
+@Test(arguments: [
+    URLError.Code.notConnectedToInternet,
+    .networkConnectionLost,
+    .dataNotAllowed,
+    .internationalRoamingOff,
+    .callIsActive,
+    .cannotFindHost,
+    .cannotConnectToHost,
+    .dnsLookupFailed,
+    .timedOut,
+])
+func getReportsAServerItCouldNotReachAsUnreachable(code: URLError.Code) async throws {
+    let client = try makeClient { _ in throw URLError(code) }
+
+    await #expect(throws: APIError.unreachable) {
+        try await client.get(path: "api/v1/stations", as: Payload.self)
+    }
+}
+
+@Test(arguments: [
+    URLError.Code.secureConnectionFailed,
+    .serverCertificateUntrusted,
+    .appTransportSecurityRequiresSecureConnection,
+])
+func getPassesThroughAURLErrorThatIsNotAboutReachability(
+    code: URLError.Code
+) async throws {
+    let client = try makeClient { _ in throw URLError(code) }
+
+    let error = await #expect(throws: URLError.self) {
+        try await client.get(path: "api/v1/stations", as: Payload.self)
+    }
+    #expect(error?.code == code)
+}
+
+@Test
+func getReportsACancelledURLRequestAsCancellation() async throws {
+    let client = try makeClient { _ in throw URLError(.cancelled) }
+
+    await #expect(throws: CancellationError.self) {
+        try await client.get(path: "api/v1/stations", as: Payload.self)
+    }
+}
+
+@Test
+func getPassesCancellationThrough() async throws {
+    let client = try makeClient { _ in throw CancellationError() }
+
+    await #expect(throws: CancellationError.self) {
+        try await client.get(path: "api/v1/stations", as: Payload.self)
+    }
+}
+
+@Test
+func getPassesThroughATransportErrorItDoesNotRecognise() async throws {
+    let client = try makeClient { _ in throw UnrecognisedTransportError() }
+
+    await #expect(throws: UnrecognisedTransportError.self) {
+        try await client.get(path: "api/v1/stations", as: Payload.self)
+    }
+}
+
+@Test
+func getReportsASuccessfulBodyOfTheWrongShapeAsDecoding() async throws {
+    let client = try makeClient { _ in
+        HTTPResponse(data: Data(#"{"unexpected": true}"#.utf8), statusCode: 200)
+    }
+
+    await #expect(throws: APIError.decoding) {
+        try await client.get(path: "api/v1/stations", as: Payload.self)
+    }
+}
+
+private struct UnrecognisedTransportError: Error {}
+
+private func makeClient(
+    responding handler: @escaping @Sendable (URLRequest) async throws -> HTTPResponse
+) throws -> APIClient {
+    APIClient(
+        baseURL: try #require(URL(string: "https://example.com")),
+        transport: StubTransport(responseHandler: handler)
+    )
+}

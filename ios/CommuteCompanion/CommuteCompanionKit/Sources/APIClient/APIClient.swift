@@ -1,20 +1,11 @@
 import Foundation
 
-public enum APIError: Error, Equatable, LocalizedError, Sendable {
+public enum APIError: Error, Equatable, Sendable {
     case invalidURL
+    case unreachable
     case invalidResponse
     case httpStatus(Int, body: Data)
-
-    public var errorDescription: String? {
-        switch self {
-        case .invalidURL:
-            "The request URL is invalid"
-        case .invalidResponse:
-            "The server returned an invalid response"
-        case .httpStatus(let statusCode, _):
-            "The server returned HTTP \(statusCode)"
-        }
-    }
+    case decoding
 }
 
 public struct HTTPResponse: Sendable {
@@ -70,12 +61,26 @@ public struct APIClient: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
-        let response = try await transport.response(for: request)
+        let response = try await send(request)
         guard 200..<300 ~= response.statusCode else {
             throw APIError.httpStatus(response.statusCode, body: response.data)
         }
 
-        return try JSONDecoder().decode(responseType, from: response.data)
+        do {
+            return try JSONDecoder().decode(responseType, from: response.data)
+        } catch {
+            throw APIError.decoding
+        }
+    }
+
+    private func send(_ request: URLRequest) async throws -> HTTPResponse {
+        do {
+            return try await transport.response(for: request)
+        } catch let error as URLError where error.code == .cancelled {
+            throw CancellationError()
+        } catch let error as URLError where error.code.meansUnreachable {
+            throw APIError.unreachable
+        }
     }
 
     private func makeURL(path: String, queryItems: [URLQueryItem]) throws -> URL {
@@ -99,5 +104,25 @@ public struct APIClient: Sendable {
             throw APIError.invalidURL
         }
         return url
+    }
+}
+
+private extension URLError.Code {
+    var meansUnreachable: Bool {
+        switch self {
+        case .notConnectedToInternet,
+             .networkConnectionLost,
+             .dataNotAllowed,
+             .internationalRoamingOff,
+             .callIsActive,
+             .cannotFindHost,
+             .cannotConnectToHost,
+             .dnsLookupFailed,
+             .timedOut:
+            true
+
+        default:
+            false
+        }
     }
 }

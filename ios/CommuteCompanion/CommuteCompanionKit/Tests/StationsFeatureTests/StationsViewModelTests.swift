@@ -56,7 +56,8 @@ struct StationsViewModelTests {
     @Test
     func loadMapsRepositoryErrorsToViewFailures() async {
         let cases: [(StationsRepositoryError, StationsViewFailure)] = [
-            (.unavailable, .unavailable),
+            (.unreachable, .unreachable),
+            (.serverFailure, .serverFailure),
             (.invalidData, .invalidData),
             (.unexpected, .unexpected),
         ]
@@ -232,7 +233,7 @@ private enum LateRepositoryCompletion: CaseIterable, Sendable {
         case .success:
             .success([station])
         case .failure:
-            .failure(StationsRepositoryError.unavailable)
+            .failure(StationsRepositoryError.unreachable)
         }
     }
 }

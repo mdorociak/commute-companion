@@ -72,7 +72,8 @@ struct DeparturesViewModelTests {
         let cases: [
             (DeparturesRepositoryError, DeparturesViewFailure)
         ] = [
-            (.unavailable, .unavailable),
+            (.unreachable, .unreachable),
+            (.serverFailure, .serverFailure),
             (.invalidData, .invalidData),
             (.unknownStation(.origin), .unknownStation(.origin)),
             (.unknownStation(.onward), .unknownStation(.onward)),
@@ -167,7 +168,7 @@ private enum LateRepositoryCompletion: CaseIterable, Sendable {
         case .success:
             .success([departure])
         case .failure:
-            .failure(DeparturesRepositoryError.unavailable)
+            .failure(DeparturesRepositoryError.unreachable)
         }
     }
 }

@@ -2,7 +2,8 @@ import Foundation
 import Observation
 
 enum StationsViewFailure: Equatable, Sendable {
-    case unavailable
+    case unreachable
+    case serverFailure
     case invalidData
     case unexpected
 }
@@ -73,8 +74,10 @@ final class StationsViewModel {
 
     private func mapFailure(_ error: StationsRepositoryError) -> StationsViewFailure {
         switch error {
-        case .unavailable:
-            .unavailable
+        case .unreachable:
+            .unreachable
+        case .serverFailure:
+            .serverFailure
         case .invalidData:
             .invalidData
         case .unexpected:

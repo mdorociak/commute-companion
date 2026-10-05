@@ -147,7 +147,7 @@ struct RemoteDeparturesRepositoryTests {
     }
 
     @Test
-    func fetchDeparturesMapsOfflineErrorToUnavailable() async throws {
+    func fetchDeparturesMapsOfflineErrorToUnreachable() async throws {
         let baseURL = try #require(URL(string: "https://example.com"))
         let apiClient = APIClient(
             baseURL: baseURL,
@@ -155,27 +155,32 @@ struct RemoteDeparturesRepositoryTests {
         )
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
-        await #expect(throws: DeparturesRepositoryError.unavailable) {
+        await #expect(throws: DeparturesRepositoryError.unreachable) {
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
+        }
+    }
+
+    @Test(arguments: [400, 500, 503])
+    func fetchDeparturesMapsAnErrorResponseToServerFailure(
+        statusCode: Int
+    ) async throws {
+        let repository = try makeRepository(statusCode: statusCode, body: "")
+
+        await #expect(throws: DeparturesRepositoryError.serverFailure) {
             try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
 
     @Test
-    func fetchDeparturesMapsHTTPFailureToUnavailable() async throws {
-        let transport = HTTPTransportStub(
-            response: HTTPResponse(
-                data: Data(),
-                statusCode: 503
-            )
-        )
+    func fetchDeparturesMapsANonHTTPResponseToInvalidData() async throws {
         let baseURL = try #require(URL(string: "https://example.com"))
         let apiClient = APIClient(
             baseURL: baseURL,
-            transport: transport
+            transport: NonHTTPResponseTransport()
         )
         let repository = RemoteDeparturesRepository(apiClient: apiClient)
 
-        await #expect(throws: DeparturesRepositoryError.unavailable) {
+        await #expect(throws: DeparturesRepositoryError.invalidData) {
             try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
@@ -205,13 +210,13 @@ struct RemoteDeparturesRepositoryTests {
     }
 
     @Test
-    func fetchDeparturesTreatsAnUnidentifiedNotFoundAsUnavailable() async throws {
+    func fetchDeparturesTreatsAnUnidentifiedNotFoundAsServerFailure() async throws {
         let repository = try makeRepository(
             statusCode: 404,
             body: "<html>Not Found</html>"
         )
 
-        await #expect(throws: DeparturesRepositoryError.unavailable) {
+        await #expect(throws: DeparturesRepositoryError.serverFailure) {
             try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
         }
     }
@@ -291,6 +296,12 @@ private actor HTTPTransportStub: HTTPTransport {
 private struct OfflineHTTPTransport: HTTPTransport {
     func response(for request: URLRequest) async throws -> HTTPResponse {
         throw URLError(.notConnectedToInternet)
+    }
+}
+
+private struct NonHTTPResponseTransport: HTTPTransport {
+    func response(for request: URLRequest) async throws -> HTTPResponse {
+        throw APIError.invalidResponse
     }
 }
 

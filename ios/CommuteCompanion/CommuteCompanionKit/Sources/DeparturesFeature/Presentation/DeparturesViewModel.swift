@@ -1,7 +1,8 @@
 import Observation
 
 enum DeparturesViewFailure: Equatable, Sendable {
-    case unavailable
+    case unreachable
+    case serverFailure
     case invalidData
     case unknownStation(DepartureStationRole)
     case unexpected
@@ -60,8 +61,10 @@ final class DeparturesViewModel {
         _ error: DeparturesRepositoryError
     ) -> DeparturesViewFailure {
         switch error {
-        case .unavailable:
-            .unavailable
+        case .unreachable:
+            .unreachable
+        case .serverFailure:
+            .serverFailure
         case .invalidData:
             .invalidData
         case .unknownStation(let role):

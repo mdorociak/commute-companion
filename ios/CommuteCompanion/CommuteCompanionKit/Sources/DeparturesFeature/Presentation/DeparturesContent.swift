@@ -173,7 +173,7 @@ private struct DepartureRow: View {
 private extension DeparturesViewFailure {
     var title: LocalizedStringResource {
         switch self {
-        case .unavailable:
+        case .unreachable, .serverFailure:
             "Scheduled departures unavailable"
         case .invalidData:
             "Unable to read scheduled departures"
@@ -186,8 +186,10 @@ private extension DeparturesViewFailure {
 
     var message: LocalizedStringResource {
         switch self {
-        case .unavailable:
-            "Check your connection and try again."
+        case .unreachable:
+            "The server could not be reached. Check your connection and try again."
+        case .serverFailure:
+            "The server could not provide scheduled departures right now. Try again later."
         case .invalidData:
             "The server response could not be understood. Try again later."
         case .unknownStation(.origin):
@@ -201,8 +203,10 @@ private extension DeparturesViewFailure {
 
     var systemImage: String {
         switch self {
-        case .unavailable:
+        case .unreachable:
             "wifi.slash"
+        case .serverFailure:
+            "exclamationmark.icloud"
         case .invalidData:
             "exclamationmark.triangle"
         case .unknownStation:
@@ -292,8 +296,12 @@ private struct DeparturesStatePreview: View {
     DeparturesStatePreview(state: .empty)
 }
 
-#Preview("Unavailable") {
-    DeparturesStatePreview(state: .failure(.unavailable))
+#Preview("Unreachable") {
+    DeparturesStatePreview(state: .failure(.unreachable))
+}
+
+#Preview("Server failure") {
+    DeparturesStatePreview(state: .failure(.serverFailure))
 }
 
 #Preview("Invalid data") {
