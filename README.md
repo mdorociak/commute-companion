@@ -1,4 +1,4 @@
-# Commuter Companion
+# Commute Companion
 
 [![Backend CI](https://github.com/mdorociak/commute-companion/actions/workflows/backend.yml/badge.svg)](https://github.com/mdorociak/commute-companion/actions/workflows/backend.yml)
 [![iOS CI](https://github.com/mdorociak/commute-companion/actions/workflows/ios.yml/badge.svg)](https://github.com/mdorociak/commute-companion/actions/workflows/ios.yml)
