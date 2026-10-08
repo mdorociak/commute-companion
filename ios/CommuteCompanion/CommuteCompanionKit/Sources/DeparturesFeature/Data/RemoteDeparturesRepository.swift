@@ -36,8 +36,11 @@ struct RemoteDeparturesRepository: DeparturesRepository {
         case .httpStatus(404, let body):
             failure(forNotFound: body)
 
-        case .httpStatus:
+        case .httpStatus(500..<600, _):
             .serverFailure
+
+        case .httpStatus:
+            .unexpected
 
         case .invalidResponse, .decoding:
             .invalidData
@@ -63,7 +66,7 @@ struct RemoteDeparturesRepository: DeparturesRepository {
             ),
             let role = dto.unknownStationRole
         else {
-            return .serverFailure
+            return .unexpected
         }
 
         return .unknownStation(role)

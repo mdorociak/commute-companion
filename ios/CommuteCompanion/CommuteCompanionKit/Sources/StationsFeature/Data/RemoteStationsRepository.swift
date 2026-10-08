@@ -32,8 +32,11 @@ struct RemoteStationsRepository: StationsRepository {
         case .unreachable:
             .unreachable
 
-        case .httpStatus:
+        case .httpStatus(500..<600, _):
             .serverFailure
+
+        case .httpStatus:
+            .unexpected
 
         case .invalidResponse, .decoding:
             .invalidData

@@ -160,8 +160,8 @@ struct RemoteDeparturesRepositoryTests {
         }
     }
 
-    @Test(arguments: [400, 500, 503])
-    func fetchDeparturesMapsAnErrorResponseToServerFailure(
+    @Test(arguments: [500, 503])
+    func fetchDeparturesMapsAServerErrorResponseToServerFailure(
         statusCode: Int
     ) async throws {
         let repository = try makeRepository(statusCode: statusCode, body: "")
@@ -210,14 +210,28 @@ struct RemoteDeparturesRepositoryTests {
     }
 
     @Test
-    func fetchDeparturesTreatsAnUnidentifiedNotFoundAsServerFailure() async throws {
+    func fetchDeparturesTreatsAnUnidentifiedNotFoundAsUnexpected() async throws {
         let repository = try makeRepository(
             statusCode: 404,
             body: "<html>Not Found</html>"
         )
 
-        await #expect(throws: DeparturesRepositoryError.serverFailure) {
+        await #expect(throws: DeparturesRepositoryError.unexpected) {
             try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
+        }
+    }
+
+    @Test
+    func fetchDeparturesMapsAContradictoryRequestToUnexpected() async throws {
+        let repository = try makeRepository(
+            statusCode: 400,
+            body: #"{"code": "same_origin_and_destination", "reference": "towards"}"#
+        )
+
+        await #expect(throws: DeparturesRepositoryError.unexpected) {
+            try await repository.fetchDepartures(
+                query: DepartureQuery(stationID: "2246799", towardsStationID: "2246799")
+            )
         }
     }
 

@@ -131,8 +131,8 @@ struct RemoteStationsRepositoryTests {
         }
     }
 
-    @Test(arguments: [400, 404, 500, 503])
-    func fetchStationsMapsAnErrorResponseToServerFailure(
+    @Test(arguments: [500, 503])
+    func fetchStationsMapsAServerErrorResponseToServerFailure(
         statusCode: Int
     ) async throws {
         let transport = HTTPTransportStub(
@@ -154,6 +154,33 @@ struct RemoteStationsRepositoryTests {
         )
 
         await #expect(throws: StationsRepositoryError.serverFailure) {
+            try await repository.fetchStations()
+        }
+    }
+
+    @Test(arguments: [400, 404])
+    func fetchStationsMapsAClientErrorResponseToUnexpected(
+        statusCode: Int
+    ) async throws {
+        let transport = HTTPTransportStub(
+            response: HTTPResponse(
+                data: Data(),
+                statusCode: statusCode
+            )
+        )
+
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: transport
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: StationsRepositoryError.unexpected) {
             try await repository.fetchStations()
         }
     }
