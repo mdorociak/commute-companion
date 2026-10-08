@@ -47,7 +47,7 @@ struct DeparturesContent: View {
                 Text("Scheduled departures")
             } footer: {
                 Text(
-                    "Showing the next \(departures.count) scheduled departures in Warsaw time. Later services may not be listed, and realtime updates are not available yet."
+                    "Showing the next ^[\(departures.count) scheduled departure](inflect: true) in Warsaw time. Later services may not be listed, and realtime updates are not available yet."
                 )
             }
         }
