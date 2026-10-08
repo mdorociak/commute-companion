@@ -24,14 +24,6 @@ public struct DeparturesView: View {
         )
     }
 
-    init(
-        stationName: String,
-        viewModel: DeparturesViewModel
-    ) {
-        self.stationName = stationName
-        _viewModel = State(initialValue: viewModel)
-    }
-
     public var body: some View {
         DeparturesContent(
             originName: stationName,

@@ -10,10 +10,6 @@ public struct StationsView: View {
         _viewModel = State(initialValue: StationsViewModel(repository: repository))
     }
 
-    init(viewModel: StationsViewModel) {
-        _viewModel = State(initialValue: viewModel)
-    }
-
     public var body: some View {
         StationsContent(
             state: viewModel.state,

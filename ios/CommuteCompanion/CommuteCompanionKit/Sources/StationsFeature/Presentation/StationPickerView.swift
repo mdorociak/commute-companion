@@ -14,11 +14,6 @@ public struct StationPickerView: View {
         _viewModel = State(initialValue: StationsViewModel(repository: repository))
     }
 
-    init(viewModel: StationsViewModel, select: @escaping (Station) -> Void) {
-        self.select = select
-        _viewModel = State(initialValue: viewModel)
-    }
-
     public var body: some View {
         StationsContent(
             state: viewModel.state,
