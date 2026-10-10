@@ -26,6 +26,13 @@ func writeCommuteFile(_ data: Data, in directory: URL) throws {
     try data.write(to: directory.appending(path: SavedCommuteStore.fileName))
 }
 
+func makeUnreadableCommuteFile(in directory: URL) throws {
+    try FileManager.default.createDirectory(
+        at: directory.appending(path: SavedCommuteStore.fileName),
+        withIntermediateDirectories: false
+    )
+}
+
 func commuteFileData(schemaVersion: Int) -> Data {
     Data(
         """

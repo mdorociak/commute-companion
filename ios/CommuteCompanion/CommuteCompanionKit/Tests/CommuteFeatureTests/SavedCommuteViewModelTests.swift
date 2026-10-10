@@ -82,6 +82,18 @@ struct SavedCommuteViewModelTests {
 
         #expect(viewModel.state == .failure(.unusable))
     }
+
+    @Test
+    func aFileThatCannotBeReadFailsAsUnreadableRatherThanUnusable() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        try makeUnreadableCommuteFile(in: directory)
+        let viewModel = makeViewModel(directory: directory)
+
+        await viewModel.load()
+
+        #expect(viewModel.state == .failure(.unreadable))
+    }
 }
 
 @MainActor

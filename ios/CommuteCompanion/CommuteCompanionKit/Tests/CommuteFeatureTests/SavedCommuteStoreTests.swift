@@ -44,6 +44,18 @@ struct SavedCommuteStoreTests {
     }
 
     @Test
+    func aFileThatCannotBeReadFailsAsUnreadableRatherThanNotConfigured() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        try makeUnreadableCommuteFile(in: directory)
+        let store = SavedCommuteStore(directory: directory)
+
+        await #expect(throws: SavedCommuteLoadError.unreadable) {
+            try await store.load()
+        }
+    }
+
+    @Test
     func anUnrecognisedSchemaVersionFailsAsIncompatibleRatherThanCorrupt() async throws {
         let directory = try makeTemporaryDirectory()
         defer { remove(directory) }
