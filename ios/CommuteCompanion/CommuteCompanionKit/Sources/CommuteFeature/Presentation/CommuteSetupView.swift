@@ -67,6 +67,10 @@ public struct CommuteSetupView<Picker: View>: View {
                     Task { await viewModel.save() }
                 }
                 .disabled(!viewModel.canSave)
+            } footer: {
+                if viewModel.choosesTheSameStationTwice {
+                    Text("Home and destination must be different stations.")
+                }
             }
         }
         .navigationTitle("Your commute")
@@ -176,18 +180,24 @@ private struct CommuteSetupPreview: View {
     init(
         commute: SavedCommute? = nil,
         reason: CommuteSetupReason? = nil,
+        choices: KeyValuePairs<CommuteField, StationReference> = [:],
         failsToSave: Bool = false
     ) {
         self.failsToSave = failsToSave
-        _viewModel = State(
-            initialValue: CommuteSetupViewModel(
-                store: SavedCommuteStore(
-                    directory: URL(filePath: "/dev/null/commute-setup-preview")
-                ),
-                commute: commute,
-                reason: reason
-            ) { _ in }
-        )
+
+        let viewModel = CommuteSetupViewModel(
+            store: SavedCommuteStore(
+                directory: URL(filePath: "/dev/null/commute-setup-preview")
+            ),
+            commute: commute,
+            reason: reason
+        ) { _ in }
+
+        for (field, station) in choices {
+            viewModel.select(station, as: field)
+        }
+
+        _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
@@ -226,6 +236,12 @@ private let previewCommute = SavedCommute(
 #Preview("Configured – Accessibility text") {
     CommuteSetupPreview(commute: previewCommute)
         .environment(\.dynamicTypeSize, .accessibility3)
+}
+
+#Preview("Same station twice") {
+    CommuteSetupPreview(
+        choices: [.home: previewStations[0], .destination: previewStations[0]]
+    )
 }
 
 #Preview("Save failed") {

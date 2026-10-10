@@ -46,6 +46,10 @@ public final class CommuteSetupViewModel {
         saveState != .saving && commute != nil
     }
 
+    public var choosesTheSameStationTwice: Bool {
+        home != nil && destination != nil && commute == nil
+    }
+
     public func select(_ station: StationReference, as field: CommuteField) {
         switch field {
         case .home:

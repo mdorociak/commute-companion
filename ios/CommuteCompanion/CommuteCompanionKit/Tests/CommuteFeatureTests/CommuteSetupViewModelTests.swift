@@ -42,6 +42,71 @@ struct CommuteSetupViewModelTests {
     }
 
     @Test
+    func theSameStationChosenTwiceIsFlagged() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        let viewModel = makeSetupViewModel(directory: directory)
+
+        viewModel.select(.brzeg, as: .home)
+        viewModel.select(.brzeg, as: .destination)
+
+        #expect(viewModel.choosesTheSameStationTwice)
+    }
+
+    @Test
+    func oneStationUnderTwoNamesIsFlagged() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        let viewModel = makeSetupViewModel(directory: directory)
+        let renamed = StationReference(
+            stationID: StationReference.brzeg.stationID,
+            displayName: "Brzeg, renamed"
+        )
+
+        viewModel.select(.brzeg, as: .home)
+        viewModel.select(renamed, as: .destination)
+
+        #expect(viewModel.canSave == false)
+        #expect(viewModel.choosesTheSameStationTwice)
+    }
+
+    @Test
+    func oneChosenStationIsNotFlaggedAsTheSameStationTwice() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        let viewModel = makeSetupViewModel(directory: directory)
+
+        viewModel.select(.brzeg, as: .home)
+
+        #expect(viewModel.choosesTheSameStationTwice == false)
+    }
+
+    @Test
+    func twoDifferentStationsAreNotFlaggedAsTheSameStationTwice() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        let viewModel = makeSetupViewModel(directory: directory)
+
+        viewModel.select(.brzeg, as: .home)
+        viewModel.select(.wroclaw, as: .destination)
+
+        #expect(viewModel.choosesTheSameStationTwice == false)
+    }
+
+    @Test
+    func choosingAnotherDestinationClearsTheSameStationFlag() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { remove(directory) }
+        let viewModel = makeSetupViewModel(directory: directory)
+
+        viewModel.select(.brzeg, as: .home)
+        viewModel.select(.brzeg, as: .destination)
+        viewModel.select(.wroclaw, as: .destination)
+
+        #expect(viewModel.choosesTheSameStationTwice == false)
+    }
+
+    @Test
     func savingReportsTheCommuteUpwardAndItLoadsBack() async throws {
         let directory = try makeTemporaryDirectory()
         defer { remove(directory) }
