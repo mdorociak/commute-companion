@@ -188,8 +188,7 @@ struct RemoteDeparturesRepositoryTests {
     @Test
     func fetchDeparturesMapsAnUnknownOriginToUnknownStation() async throws {
         let repository = try makeRepository(
-            statusCode: 404,
-            body: #"{"code": "unknown_station", "reference": "station_id"}"#
+            response: contractResponse("unknown_origin")
         )
 
         await #expect(throws: DeparturesRepositoryError.unknownStation(.origin)) {
@@ -200,8 +199,7 @@ struct RemoteDeparturesRepositoryTests {
     @Test
     func fetchDeparturesMapsAnUnknownOnwardStationToUnknownStation() async throws {
         let repository = try makeRepository(
-            statusCode: 404,
-            body: #"{"code": "unknown_station", "reference": "towards"}"#
+            response: contractResponse("unknown_towards")
         )
 
         await #expect(throws: DeparturesRepositoryError.unknownStation(.onward)) {
@@ -224,8 +222,7 @@ struct RemoteDeparturesRepositoryTests {
     @Test
     func fetchDeparturesMapsAContradictoryRequestToUnexpected() async throws {
         let repository = try makeRepository(
-            statusCode: 400,
-            body: #"{"code": "same_origin_and_destination", "reference": "towards"}"#
+            response: contractResponse("towards_equal_to_origin")
         )
 
         await #expect(throws: DeparturesRepositoryError.unexpected) {
@@ -282,13 +279,35 @@ private func makeRepository(
     statusCode: Int,
     body: String
 ) throws -> RemoteDeparturesRepository {
-    let transport = HTTPTransportStub(
+    try makeRepository(
         response: HTTPResponse(data: Data(body.utf8), statusCode: statusCode)
     )
+}
+
+private func makeRepository(
+    response: HTTPResponse
+) throws -> RemoteDeparturesRepository {
+    let transport = HTTPTransportStub(response: response)
     let baseURL = try #require(URL(string: "https://example.com"))
 
     return RemoteDeparturesRepository(
         apiClient: APIClient(baseURL: baseURL, transport: transport)
+    )
+}
+
+private func contractResponse(_ name: String) throws -> HTTPResponse {
+    let file = URL(
+        filePath: "../../../../../contract/departures/\(name).json",
+        relativeTo: URL(filePath: #filePath)
+    )
+    let fixture = try JSONSerialization.jsonObject(with: Data(contentsOf: file))
+    let contract = try #require(fixture as? [String: Any])
+    let statusCode = try #require(contract["status"] as? Int)
+    let body = try #require(contract["body"])
+
+    return HTTPResponse(
+        data: try JSONSerialization.data(withJSONObject: body),
+        statusCode: statusCode
     )
 }
 

@@ -1,4 +1,5 @@
 import csv
+import json
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -15,6 +16,7 @@ from app.main import app
 from app.timetable import Timetable
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "mock_gtfs"
+CONTRACT_DIR = Path(__file__).parents[2] / "contract" / "departures"
 WARSAW = ZoneInfo("Europe/Warsaw")
 BRZEG = "2246799"
 OLAWA = "3000001"
@@ -46,6 +48,10 @@ def _client_at(now: datetime) -> TestClient:
 
 def _departures_path(station_id: str) -> str:
     return f"/api/v1/stations/{station_id}/departures"
+
+
+def _contract_response(name: str) -> dict[str, object]:
+    return json.loads((CONTRACT_DIR / f"{name}.json").read_text(encoding="utf-8"))
 
 
 def test_departures_returns_running_trains_as_json() -> None:
@@ -125,11 +131,9 @@ def test_departures_returns_previous_service_day_trip_after_midnight() -> None:
 def test_unknown_station_returns_not_found_naming_the_reference() -> None:
     client = _client_at(datetime(2026, 5, 20, 5, 0, tzinfo=WARSAW))
     response = client.get(_departures_path("nope"))
-    assert response.status_code == 404
-    assert response.json() == {
-        "code": "unknown_station",
-        "reference": "station_id",
-    }
+    contract = _contract_response("unknown_origin")
+    assert response.status_code == contract["status"]
+    assert response.json() == contract["body"]
 
 
 def test_towards_limits_the_board_to_trips_calling_at_that_station() -> None:
@@ -153,11 +157,9 @@ def test_unknown_towards_station_returns_not_found_naming_towards() -> None:
 
     response = client.get(_departures_path(BRZEG), params={"towards": "nope"})
 
-    assert response.status_code == 404
-    assert response.json() == {
-        "code": "unknown_station",
-        "reference": "towards",
-    }
+    contract = _contract_response("unknown_towards")
+    assert response.status_code == contract["status"]
+    assert response.json() == contract["body"]
 
 
 def test_towards_equal_to_origin_returns_bad_request() -> None:
@@ -165,11 +167,9 @@ def test_towards_equal_to_origin_returns_bad_request() -> None:
 
     response = client.get(_departures_path(BRZEG), params={"towards": BRZEG})
 
-    assert response.status_code == 400
-    assert response.json() == {
-        "code": "same_origin_and_destination",
-        "reference": "towards",
-    }
+    contract = _contract_response("towards_equal_to_origin")
+    assert response.status_code == contract["status"]
+    assert response.json() == contract["body"]
 
 
 def test_empty_towards_is_an_unresolved_reference_not_an_absent_filter() -> None:
@@ -177,11 +177,9 @@ def test_empty_towards_is_an_unresolved_reference_not_an_absent_filter() -> None
 
     response = client.get(_departures_path(BRZEG), params={"towards": ""})
 
-    assert response.status_code == 404
-    assert response.json() == {
-        "code": "unknown_station",
-        "reference": "towards",
-    }
+    contract = _contract_response("unknown_towards")
+    assert response.status_code == contract["status"]
+    assert response.json() == contract["body"]
 
 
 def test_unversioned_departures_route_is_not_exposed() -> None:

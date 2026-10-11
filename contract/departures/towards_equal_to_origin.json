@@ -1,0 +1,7 @@
+{
+  "status": 400,
+  "body": {
+    "code": "same_origin_and_destination",
+    "reference": "towards"
+  }
+}
