@@ -24,7 +24,9 @@ completed functionality.
 - **Departures:** a dedicated feature target with DTO/domain separation, real
   API integration, cancellation-aware state loading, a tested ViewModel, and a
   public scheduled-departures screen with loading, empty, and typed failure
-  states.
+  states. A board refreshes when pulled down and when the app returns to the
+  foreground, keeps its departures on screen while it does, and shows when they
+  were last checked; a failed refresh keeps them under a notice saying why.
 - **Navigation:** typed station selection composed by `Root` into the scheduled
   departures feature without coupling the feature targets to one another.
 - **Saved commute:** a home station and a destination, chosen once on first
