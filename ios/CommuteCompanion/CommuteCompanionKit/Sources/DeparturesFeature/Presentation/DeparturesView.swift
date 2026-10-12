@@ -8,6 +8,8 @@ public struct DeparturesView: View {
     @State private var viewModel: DeparturesViewModel
     @State private var reloadTrigger = false
 
+    @Environment(\.scenePhase) private var scenePhase
+
     public init(
         apiClient: APIClient,
         stationID: String,
@@ -19,7 +21,8 @@ public struct DeparturesView: View {
         _viewModel = State(
             initialValue: DeparturesViewModel(
                 query: DepartureQuery(stationID: stationID),
-                repository: repository
+                repository: repository,
+                now: { Date.now }
             )
         )
     }
@@ -37,6 +40,14 @@ public struct DeparturesView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: reloadTrigger) {
             await viewModel.load()
+        }
+        .refreshable {
+            await viewModel.load()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                reloadTrigger.toggle()
+            }
         }
     }
 }

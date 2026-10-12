@@ -9,6 +9,8 @@ public struct CommuteBoardView: View {
     @State private var viewModel: DeparturesViewModel
     @State private var reloadTrigger = false
 
+    @Environment(\.scenePhase) private var scenePhase
+
     public init(
         apiClient: APIClient,
         route: DepartureRoute,
@@ -23,7 +25,8 @@ public struct CommuteBoardView: View {
         _viewModel = State(
             initialValue: DeparturesViewModel(
                 query: DepartureQuery(route),
-                repository: repository
+                repository: repository,
+                now: { Date.now }
             )
         )
     }
@@ -63,6 +66,14 @@ public struct CommuteBoardView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task(id: reloadTrigger) {
             await viewModel.load()
+        }
+        .refreshable {
+            await viewModel.load()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                reloadTrigger.toggle()
+            }
         }
     }
 

@@ -8,14 +8,23 @@ struct DeparturesContent: View {
     let chooseAgain: ((DepartureStationRole) -> Void)?
     let retry: () -> Void
 
+    @Environment(\.locale) private var locale
+
     @ViewBuilder
     var body: some View {
         switch state {
         case .idle, .loading:
             ProgressView("Loading scheduled departures…")
 
-        case .loaded(let departures):
-            departuresList(departures)
+        case .loaded(let departures, let fetchedAt):
+            departuresList(departures, fetchedAt: fetchedAt)
+
+        case .refreshFailed(let departures, let fetchedAt, let failure):
+            departuresList(
+                departures,
+                fetchedAt: fetchedAt,
+                refreshFailure: failure
+            )
 
         case .empty:
             ContentUnavailableView(
@@ -37,8 +46,24 @@ struct DeparturesContent: View {
         }
     }
 
-    private func departuresList(_ departures: [Departure]) -> some View {
-        List {
+    private func departuresList(
+        _ departures: [Departure],
+        fetchedAt: Date,
+        refreshFailure: DeparturesViewFailure? = nil
+    ) -> some View {
+        let fetchedTime = fetchedAt.formatted(.warsawTime(locale: locale))
+
+        return List {
+            if let refreshFailure {
+                Section {
+                    RefreshFailureNotice(
+                        failure: refreshFailure,
+                        fetchedTime: fetchedTime,
+                        retry: retry
+                    )
+                }
+            }
+
             Section {
                 ForEach(departures) { departure in
                     DepartureRow(departure: departure)
@@ -46,9 +71,13 @@ struct DeparturesContent: View {
             } header: {
                 Text("Scheduled departures")
             } footer: {
-                Text(
-                    "Showing the next ^[\(departures.count) scheduled departure](inflect: true) in Warsaw time. Later services may not be listed, and realtime updates are not available yet."
-                )
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(
+                        "Showing the next ^[\(departures.count) scheduled departure](inflect: true) in Warsaw time. Later services may not be listed, and realtime updates are not available yet."
+                    )
+
+                    Text("Last checked at \(fetchedTime).")
+                }
             }
         }
     }
@@ -74,15 +103,37 @@ struct DeparturesContent: View {
     }
 }
 
-private struct DepartureRow: View {
-    private static let warsawTimeZone: TimeZone = {
-        guard let timeZone = TimeZone(identifier: "Europe/Warsaw") else {
-            preconditionFailure("Europe/Warsaw must be a valid time zone")
+private struct RefreshFailureNotice: View {
+    let failure: DeparturesViewFailure
+    let fetchedTime: String
+    let retry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Could not refresh")
+                        .font(.headline)
+
+                    Text(failure.message)
+
+                    Text("Showing departures as of \(fetchedTime).")
+                        .foregroundStyle(.secondary)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: failure.systemImage)
+            }
+            .accessibilityElement(children: .combine)
+
+            Button("Try again", action: retry)
+                .buttonStyle(.bordered)
         }
+        .padding(.vertical, 4)
+    }
+}
 
-        return timeZone
-    }()
-
+private struct DepartureRow: View {
     let departure: Departure
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -138,17 +189,7 @@ private struct DepartureRow: View {
     }
 
     private var scheduledTime: String {
-        departure.scheduledAt.formatted(scheduledTimeFormat)
-    }
-
-    private var scheduledTimeFormat: Date.FormatStyle {
-        Date.FormatStyle(
-            date: .omitted,
-            time: .shortened,
-            locale: locale,
-            calendar: Calendar(identifier: .gregorian),
-            timeZone: Self.warsawTimeZone
-        )
+        departure.scheduledAt.formatted(.warsawTime(locale: locale))
     }
 
     private var destination: String? {
@@ -169,6 +210,26 @@ private struct DepartureRow: View {
         return trimmedText.isEmpty ? nil : trimmedText
     }
 }
+
+private extension FormatStyle where Self == Date.FormatStyle {
+    static func warsawTime(locale: Locale) -> Self {
+        Date.FormatStyle(
+            date: .omitted,
+            time: .shortened,
+            locale: locale,
+            calendar: Calendar(identifier: .gregorian),
+            timeZone: warsawTimeZone
+        )
+    }
+}
+
+private let warsawTimeZone: TimeZone = {
+    guard let timeZone = TimeZone(identifier: "Europe/Warsaw") else {
+        preconditionFailure("Europe/Warsaw must be a valid time zone")
+    }
+
+    return timeZone
+}()
 
 private extension DeparturesViewFailure {
     var title: LocalizedStringResource {
@@ -238,6 +299,8 @@ private struct DeparturesStatePreview: View {
     }
 }
 
+private let previewFetchedAt = Date(timeIntervalSince1970: 1_779_247_000)
+
 #Preview("Loading") {
     DeparturesStatePreview(state: .loading)
 }
@@ -266,7 +329,7 @@ private struct DeparturesStatePreview: View {
                 scheduledAt: Date(timeIntervalSince1970: 1_779_253_260),
                 platform: "I"
             ),
-        ])
+        ], fetchedAt: previewFetchedAt)
     )
 }
 
@@ -287,7 +350,7 @@ private struct DeparturesStatePreview: View {
                 scheduledAt: Date(timeIntervalSince1970: 1_779_253_260),
                 platform: nil
             ),
-        ])
+        ], fetchedAt: previewFetchedAt)
     )
     .environment(\.dynamicTypeSize, .accessibility3)
 }
@@ -326,7 +389,27 @@ private struct DeparturesStatePreview: View {
                 scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
                 platform: "II"
             ),
-        ]),
+        ], fetchedAt: previewFetchedAt),
+        destinationName: "Wrocław Główny",
+        title: "Brzeg → Wrocław Główny"
+    )
+}
+
+#Preview("Board – refresh failed") {
+    DeparturesStatePreview(
+        state: .refreshFailed(
+            [
+                Departure(
+                    id: "board-refresh-failed",
+                    line: "D1",
+                    destination: "Wrocław Główny",
+                    scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
+                    platform: "II"
+                ),
+            ],
+            fetchedAt: previewFetchedAt,
+            .unreachable
+        ),
         destinationName: "Wrocław Główny",
         title: "Brzeg → Wrocław Główny"
     )

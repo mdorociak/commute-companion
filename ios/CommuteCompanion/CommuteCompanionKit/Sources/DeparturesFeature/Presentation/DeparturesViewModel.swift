@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 enum DeparturesViewFailure: Equatable, Sendable {
@@ -11,7 +12,12 @@ enum DeparturesViewFailure: Equatable, Sendable {
 enum DeparturesViewState: Equatable, Sendable {
     case idle
     case loading
-    case loaded([Departure])
+    case loaded([Departure], fetchedAt: Date)
+    case refreshFailed(
+        [Departure],
+        fetchedAt: Date,
+        DeparturesViewFailure
+    )
     case empty
     case failure(DeparturesViewFailure)
 }
@@ -21,19 +27,32 @@ enum DeparturesViewState: Equatable, Sendable {
 final class DeparturesViewModel {
     private let query: DepartureQuery
     private let repository: any DeparturesRepository
+    private let now: () -> Date
+    @ObservationIgnored private var latestLoad = 0
 
     private(set) var state: DeparturesViewState = .idle
 
     init(
         query: DepartureQuery,
-        repository: any DeparturesRepository
+        repository: any DeparturesRepository,
+        now: @escaping () -> Date
     ) {
         self.query = query
         self.repository = repository
+        self.now = now
     }
 
     func load() async {
-        state = .loading
+        latestLoad += 1
+        let thisLoad = latestLoad
+
+        switch state {
+        case .loaded(let departures, let fetchedAt),
+             .refreshFailed(let departures, let fetchedAt, _):
+            state = .loaded(departures, fetchedAt: fetchedAt)
+        case .idle, .loading, .empty, .failure:
+            state = .loading
+        }
 
         do {
             let departures = try await repository.fetchDepartures(
@@ -41,19 +60,34 @@ final class DeparturesViewModel {
             )
 
             try Task.checkCancellation()
+            guard thisLoad == latestLoad else { return }
 
-            state = departures.isEmpty ? .empty : .loaded(departures)
+            state = departures.isEmpty
+                ? .empty
+                : .loaded(departures, fetchedAt: now())
 
         } catch is CancellationError {
             // Cancellation is not a user-facing failure.
 
         } catch let error as DeparturesRepositoryError {
-            guard !Task.isCancelled else { return }
-            state = .failure(mapFailure(error))
+            guard !Task.isCancelled, thisLoad == latestLoad else { return }
+            show(mapFailure(error))
 
         } catch {
-            guard !Task.isCancelled else { return }
-            state = .failure(.unexpected)
+            guard !Task.isCancelled, thisLoad == latestLoad else { return }
+            show(.unexpected)
+        }
+    }
+
+    private func show(_ failure: DeparturesViewFailure) {
+        switch (state, failure) {
+        case (_, .unknownStation):
+            state = .failure(failure)
+        case (.loaded(let departures, let fetchedAt), _),
+             (.refreshFailed(let departures, let fetchedAt, _), _):
+            state = .refreshFailed(departures, fetchedAt: fetchedAt, failure)
+        case (.idle, _), (.loading, _), (.empty, _), (.failure, _):
+            state = .failure(failure)
         }
     }
 
