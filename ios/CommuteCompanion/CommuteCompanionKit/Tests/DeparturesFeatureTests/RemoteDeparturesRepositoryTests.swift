@@ -47,7 +47,7 @@ struct RemoteDeparturesRepositoryTests {
                 id: "dep_f8a9c26b8a9d5f00bb6386d420915e62",
                 line: "D7",
                 destination: "Sędzisław",
-                scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
+                scheduledAt: try Date("2026-05-20T05:36:00+02:00", strategy: .iso8601),
                 platform: "II"
             )
         ])

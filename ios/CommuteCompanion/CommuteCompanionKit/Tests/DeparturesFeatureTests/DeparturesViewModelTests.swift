@@ -7,19 +7,19 @@ import Testing
 struct DeparturesViewModelTests {
 
     @Test
-    func loadTransitionsFromIdleThroughLoadingToLoadedAndPreservesOrder() async {
+    func loadTransitionsFromIdleThroughLoadingToLoadedAndPreservesOrder() async throws {
         let laterDeparture = Departure(
             id: "later",
             line: "D1",
             destination: "Wrocław Główny",
-            scheduledAt: Date(timeIntervalSince1970: 1_779_250_260),
+            scheduledAt: try Date("2026-05-20T06:11:00+02:00", strategy: .iso8601),
             platform: "II"
         )
         let earlierDeparture = Departure(
             id: "earlier",
             line: "D7",
             destination: "Sędzisław",
-            scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
+            scheduledAt: try Date("2026-05-20T05:36:00+02:00", strategy: .iso8601),
             platform: "I"
         )
         let repository = ControlledDeparturesRepository()
@@ -112,12 +112,12 @@ struct DeparturesViewModelTests {
     @Test(arguments: LateRepositoryCompletion.allCases)
     fileprivate func cancelledLoadCannotPublishLateRepositoryCompletion(
         _ lateCompletion: LateRepositoryCompletion
-    ) async {
+    ) async throws {
         let departure = Departure(
             id: "late",
             line: "D1",
             destination: "Wrocław Główny",
-            scheduledAt: Date(timeIntervalSince1970: 1_779_250_260),
+            scheduledAt: try Date("2026-05-20T06:11:00+02:00", strategy: .iso8601),
             platform: "II"
         )
         let repository = ControlledDeparturesRepository()
@@ -366,15 +366,15 @@ struct DeparturesViewModelTests {
     }
 }
 
-private let firstCheck = Date(timeIntervalSince1970: 1_779_246_000)
-private let secondCheck = Date(timeIntervalSince1970: 1_779_246_600)
+private let firstCheck = try! Date("2026-05-20T05:00:00+02:00", strategy: .iso8601)
+private let secondCheck = try! Date("2026-05-20T05:10:00+02:00", strategy: .iso8601)
 
 private func departure(_ id: String) -> Departure {
     Departure(
         id: id,
         line: "D1",
         destination: "Wrocław Główny",
-        scheduledAt: Date(timeIntervalSince1970: 1_779_250_260),
+        scheduledAt: try! Date("2026-05-20T06:11:00+02:00", strategy: .iso8601),
         platform: "II"
     )
 }

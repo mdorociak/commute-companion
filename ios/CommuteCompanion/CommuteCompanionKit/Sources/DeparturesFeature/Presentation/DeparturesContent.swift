@@ -299,7 +299,7 @@ private struct DeparturesStatePreview: View {
     }
 }
 
-private let previewFetchedAt = Date(timeIntervalSince1970: 1_779_247_000)
+private let previewFetchedAt = try! Date("2026-05-20T05:16:40+02:00", strategy: .iso8601)
 
 #Preview("Loading") {
     DeparturesStatePreview(state: .loading)
@@ -312,21 +312,21 @@ private let previewFetchedAt = Date(timeIntervalSince1970: 1_779_247_000)
                 id: "brzeg-wroclaw",
                 line: "D1",
                 destination: "Wrocław Główny",
-                scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
+                scheduledAt: try! Date("2026-05-20T05:36:00+02:00", strategy: .iso8601),
                 platform: "II"
             ),
             Departure(
                 id: "brzeg-opole",
                 line: "D7",
                 destination: "Opole Główne",
-                scheduledAt: Date(timeIntervalSince1970: 1_779_250_260),
+                scheduledAt: try! Date("2026-05-20T06:11:00+02:00", strategy: .iso8601),
                 platform: nil
             ),
             Departure(
                 id: "destination-unavailable",
                 line: "D11",
                 destination: nil,
-                scheduledAt: Date(timeIntervalSince1970: 1_779_253_260),
+                scheduledAt: try! Date("2026-05-20T07:01:00+02:00", strategy: .iso8601),
                 platform: "I"
             ),
         ], fetchedAt: previewFetchedAt)
@@ -340,14 +340,14 @@ private let previewFetchedAt = Date(timeIntervalSince1970: 1_779_247_000)
                 id: "brzeg-wroclaw-accessibility",
                 line: "D1",
                 destination: "Wrocław Główny",
-                scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
+                scheduledAt: try! Date("2026-05-20T05:36:00+02:00", strategy: .iso8601),
                 platform: "II"
             ),
             Departure(
                 id: "destination-unavailable-accessibility",
                 line: "D11",
                 destination: nil,
-                scheduledAt: Date(timeIntervalSince1970: 1_779_253_260),
+                scheduledAt: try! Date("2026-05-20T07:01:00+02:00", strategy: .iso8601),
                 platform: nil
             ),
         ], fetchedAt: previewFetchedAt)
@@ -386,7 +386,7 @@ private let previewFetchedAt = Date(timeIntervalSince1970: 1_779_247_000)
                 id: "board-brzeg-wroclaw",
                 line: "D1",
                 destination: "Wrocław Główny",
-                scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
+                scheduledAt: try! Date("2026-05-20T05:36:00+02:00", strategy: .iso8601),
                 platform: "II"
             ),
         ], fetchedAt: previewFetchedAt),
@@ -403,7 +403,7 @@ private let previewFetchedAt = Date(timeIntervalSince1970: 1_779_247_000)
                     id: "board-refresh-failed",
                     line: "D1",
                     destination: "Wrocław Główny",
-                    scheduledAt: Date(timeIntervalSince1970: 1_779_248_160),
+                    scheduledAt: try! Date("2026-05-20T05:36:00+02:00", strategy: .iso8601),
                     platform: "II"
                 ),
             ],
