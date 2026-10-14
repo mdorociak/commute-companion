@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from app.gtfs.loader import load_routes, load_stations, load_trips
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "mock_gtfs"
@@ -65,3 +67,47 @@ def test_every_trip_references_a_known_route() -> None:
     trips = load_trips(FIXTURE_DIR)
     for trip in trips.values():
         assert trip.route_id in routes
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"), [("   ", None), (" Wrocław Główny ", "Wrocław Główny")]
+)
+def test_trip_headsign_is_trimmed_and_blank_is_none(
+    tmp_path: Path, raw: str, expected: str | None
+) -> None:
+    _write_trips(tmp_path, headsign=raw)
+    assert load_trips(tmp_path)["T1"].headsign == expected
+
+
+@pytest.mark.parametrize(("raw", "expected"), [("   ", None), (" II ", "II")])
+def test_platform_code_is_trimmed_and_blank_is_none(
+    tmp_path: Path, raw: str, expected: str | None
+) -> None:
+    _write_stops(tmp_path, station_code="11", platform_code=raw)
+    assert load_stations(tmp_path)["S1"].platforms[0].code == expected
+
+
+@pytest.mark.parametrize(("raw", "expected"), [("   ", None), (" 11 ", "11")])
+def test_station_code_is_trimmed_and_blank_is_none(
+    tmp_path: Path, raw: str, expected: str | None
+) -> None:
+    _write_stops(tmp_path, station_code=raw, platform_code="II")
+    assert load_stations(tmp_path)["S1"].code == expected
+
+
+def _write_trips(directory: Path, *, headsign: str) -> None:
+    (directory / "trips.txt").write_text(
+        "route_id,service_id,trip_id,trip_headsign\n"
+        f'R1,WEEKDAYS,T1,"{headsign}"\n',
+        encoding="utf-8",
+    )
+
+
+def _write_stops(directory: Path, *, station_code: str, platform_code: str) -> None:
+    (directory / "stops.txt").write_text(
+        "stop_id,stop_code,stop_name,stop_lat,stop_lon,"
+        "location_type,parent_station,platform_code\n"
+        f'S1,"{station_code}",Brzeg,50.85,17.47,1,,\n'
+        f'P1,,Brzeg,50.85,17.47,0,S1,"{platform_code}"\n',
+        encoding="utf-8",
+    )

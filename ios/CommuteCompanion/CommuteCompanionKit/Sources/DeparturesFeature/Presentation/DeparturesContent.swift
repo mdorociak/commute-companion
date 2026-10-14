@@ -150,7 +150,7 @@ private struct DepartureRow: View {
                 Text("Line \(departure.line)")
                     .font(.headline)
 
-                if let destination {
+                if let destination = departure.destination {
                     Text(destination)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
@@ -159,7 +159,7 @@ private struct DepartureRow: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                if let platform {
+                if let platform = departure.platform {
                     Label(
                         "Platform \(platform)",
                         systemImage: "signpost.right"
@@ -190,24 +190,6 @@ private struct DepartureRow: View {
 
     private var scheduledTime: String {
         departure.scheduledAt.formatted(.warsawTime(locale: locale))
-    }
-
-    private var destination: String? {
-        nonEmptyText(departure.destination)
-    }
-
-    private var platform: String? {
-        nonEmptyText(departure.platform)
-    }
-
-    private func nonEmptyText(_ text: String?) -> String? {
-        guard let text else { return nil }
-
-        let trimmedText = text.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-
-        return trimmedText.isEmpty ? nil : trimmedText
     }
 }
 

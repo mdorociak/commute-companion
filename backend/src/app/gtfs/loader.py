@@ -11,6 +11,10 @@ def _gtfs_date(value: str):
     # discarded by .date() on the same line, so it never reaches a calculation.
     return datetime.strptime(value, "%Y%m%d").date() if value else None  # noqa: DTZ007
 
+
+def _optional_text(value: str | None) -> str | None:
+    return (value or "").strip() or None
+
 def load_stations(gtfs_dir: Path) -> dict[str, Station]:
 
     stops_file = gtfs_dir / "stops.txt"
@@ -25,7 +29,7 @@ def load_stations(gtfs_dir: Path) -> dict[str, Station]:
                 stations[row["stop_id"]] = Station(
                     id=row["stop_id"],
                     name=row["stop_name"],
-                    code=row.get("stop_code") or None,
+                    code=_optional_text(row.get("stop_code")),
                     lat=float(row["stop_lat"]),
                     lon=float(row["stop_lon"]),
                     platforms=[],
@@ -41,7 +45,7 @@ def load_stations(gtfs_dir: Path) -> dict[str, Station]:
         station.platforms.append(
             Platform(
                 id=row["stop_id"],
-                code=row.get("platform_code") or None,
+                code=_optional_text(row.get("platform_code")),
             )
         )
 
@@ -72,7 +76,7 @@ def load_trips(gtfs_dir: Path) -> dict[str, Trip]:
                 id=row["trip_id"],
                 route_id=row["route_id"],
                 service_id=row["service_id"],
-                headsign=row.get("trip_headsign") or None,
+                headsign=_optional_text(row.get("trip_headsign")),
             )
 
     return trips

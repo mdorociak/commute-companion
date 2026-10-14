@@ -80,7 +80,7 @@ struct StationsContent: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(station.name)
 
-            if let code = station.code, !code.isEmpty {
+            if let code = station.code {
                 Text("Code: \(code)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
