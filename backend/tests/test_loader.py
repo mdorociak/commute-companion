@@ -44,8 +44,8 @@ def test_orphan_platform_pointing_at_nonexistent_parent_is_dropped() -> None:
 def test_load_routes_returns_routes_by_id() -> None:
     routes = load_routes(FIXTURE_DIR)
     assert len(routes) == 2
-    assert routes["249524"].short_name == "D1"
-    assert routes["249497"].short_name == "D7"
+    assert routes["249524"].name == "D1"
+    assert routes["249497"].name == "D7"
 
 
 def test_load_trips_returns_trips_by_id() -> None:
@@ -79,6 +79,13 @@ def test_trip_headsign_is_trimmed_and_blank_is_none(
     assert load_trips(tmp_path)["T1"].headsign == expected
 
 
+def test_trip_without_a_headsign_column_has_no_headsign(tmp_path: Path) -> None:
+    (tmp_path / "trips.txt").write_text(
+        "route_id,service_id,trip_id\nR1,WEEKDAYS,T1\n", encoding="utf-8"
+    )
+    assert load_trips(tmp_path)["T1"].headsign is None
+
+
 @pytest.mark.parametrize(("raw", "expected"), [("   ", None), (" II ", "II")])
 def test_platform_code_is_trimmed_and_blank_is_none(
     tmp_path: Path, raw: str, expected: str | None
@@ -93,6 +100,51 @@ def test_station_code_is_trimmed_and_blank_is_none(
 ) -> None:
     _write_stops(tmp_path, station_code=raw, platform_code="II")
     assert load_stations(tmp_path)["S1"].code == expected
+
+
+@pytest.mark.parametrize(
+    ("short_name", "long_name", "expected"),
+    [
+        ("D1", "Wrocław Główny - Opole Główne", "D1"),
+        ("", "D91/D64", "D91/D64"),
+        ("   ", " D91/D64 ", "D91/D64"),
+    ],
+)
+def test_route_name_is_the_short_name_falling_back_to_the_long_name(
+    tmp_path: Path, short_name: str, long_name: str, expected: str
+) -> None:
+    _write_routes(
+        tmp_path,
+        header="route_id,route_short_name,route_long_name",
+        row=f'R1,"{short_name}","{long_name}"',
+    )
+    assert load_routes(tmp_path)["R1"].name == expected
+
+
+def test_route_name_is_the_long_name_without_a_short_name_column(
+    tmp_path: Path,
+) -> None:
+    _write_routes(tmp_path, header="route_id,route_long_name", row="R1,D91/D64")
+    assert load_routes(tmp_path)["R1"].name == "D91/D64"
+
+
+@pytest.mark.parametrize(
+    ("header", "row"),
+    [
+        ("route_id,route_short_name,route_long_name", 'R1,"   ",""'),
+        ("route_id,route_type", "R1,2"),
+    ],
+)
+def test_route_without_a_name_is_rejected(
+    tmp_path: Path, header: str, row: str
+) -> None:
+    _write_routes(tmp_path, header=header, row=row)
+    with pytest.raises(ValueError, match="route R1"):
+        load_routes(tmp_path)
+
+
+def _write_routes(directory: Path, *, header: str, row: str) -> None:
+    (directory / "routes.txt").write_text(f"{header}\n{row}\n", encoding="utf-8")
 
 
 def _write_trips(directory: Path, *, headsign: str) -> None:
