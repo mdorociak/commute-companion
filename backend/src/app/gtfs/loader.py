@@ -15,6 +15,7 @@ def _gtfs_date(value: str):
 def _optional_text(value: str | None) -> str | None:
     return (value or "").strip() or None
 
+
 def load_stations(gtfs_dir: Path) -> dict[str, Station]:
 
     stops_file = gtfs_dir / "stops.txt"
@@ -50,6 +51,8 @@ def load_stations(gtfs_dir: Path) -> dict[str, Station]:
         )
 
     return stations
+
+
 def load_routes(gtfs_dir: Path) -> dict[str, Route]:
     routes_file = gtfs_dir / "routes.txt"
     routes: dict[str, Route] = {}
@@ -57,10 +60,14 @@ def load_routes(gtfs_dir: Path) -> dict[str, Route]:
     with routes_file.open(encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            routes[row["route_id"]] = Route(
-                id=row["route_id"],
-                short_name=row["route_short_name"],
+            name = _optional_text(row.get("route_short_name")) or _optional_text(
+                row.get("route_long_name")
             )
+            if name is None:
+                raise ValueError(
+                    f"route {row['route_id']} has neither a short nor a long name"
+                )
+            routes[row["route_id"]] = Route(id=row["route_id"], name=name)
 
     return routes
 
@@ -80,6 +87,7 @@ def load_trips(gtfs_dir: Path) -> dict[str, Trip]:
             )
 
     return trips
+
 
 def load_feed_info(gtfs_dir: Path) -> FeedInfo:
     with (gtfs_dir / "feed_info.txt").open(encoding="utf-8") as f:

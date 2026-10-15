@@ -19,7 +19,7 @@ class Station(BaseModel):
 
 class Route(BaseModel):
     id: str
-    short_name: str
+    name: str
 
 
 class Trip(BaseModel):

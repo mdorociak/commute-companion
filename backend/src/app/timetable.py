@@ -129,7 +129,7 @@ class Timetable:
                             stop_sequence=stop_time.stop_sequence,
                         ),
                         scheduled_utc=scheduled_utc,
-                        line=route.short_name if route else trip.route_id,
+                        line=route.name if route else trip.route_id,
                         destination=trip.headsign,
                         platform=platform_code,
                     )

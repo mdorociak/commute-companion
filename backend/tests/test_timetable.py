@@ -265,8 +265,8 @@ def test_departures_are_sorted_by_utc_instant_across_autumn_fold() -> None:
             ),
         },
         routes={
-            "A": Route(id="A", short_name="A"),
-            "B": Route(id="B", short_name="B"),
+            "A": Route(id="A", name="A"),
+            "B": Route(id="B", name="B"),
         },
         service_calendar=ServiceCalendar(
             patterns={},
@@ -335,8 +335,8 @@ def test_simultaneous_departures_use_line_as_the_first_tie_breaker() -> None:
             ),
         },
         routes={
-            "route-a": Route(id="route-a", short_name="A"),
-            "route-b": Route(id="route-b", short_name="B"),
+            "route-a": Route(id="route-a", name="A"),
+            "route-b": Route(id="route-b", name="B"),
         },
         service_calendar=ServiceCalendar(
             patterns={},
