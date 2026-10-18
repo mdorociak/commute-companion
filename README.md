@@ -15,7 +15,9 @@ completed functionality.
 
 - **Backend:** static KD GTFS loading, service-calendar and after-midnight
   timetable handling, versioned station and scheduled-departure endpoints,
-  stable opaque departure identifiers, and deterministic tests.
+  stable opaque departure identifiers, and deterministic tests. Once the loaded
+  timetable has expired, a departure request is answered as unavailable rather
+  than as an empty board.
 - **iOS foundation:** an Xcode application target, one modular local Swift
   package, explicit dependency injection, and a tested provider-neutral HTTP
   client.

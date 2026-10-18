@@ -25,6 +25,21 @@ class QueryWindow:
 
 
 @dataclass(frozen=True)
+class ServiceDateRange:
+    first: date | None = None
+    last: date | None = None
+
+    def __post_init__(self) -> None:
+        if self.first is not None and self.last is not None and self.last < self.first:
+            raise ValueError("service-date range must not end before it starts")
+
+    def contains(self, service_date: date) -> bool:
+        if self.first is not None and service_date < self.first:
+            return False
+        return self.last is None or service_date <= self.last
+
+
+@dataclass(frozen=True)
 class ServiceDayResolver:
     provider_timezone: ZoneInfo
 

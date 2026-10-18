@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from ...departure_listing import (
     ListDepartures,
+    OutsideFeedValidity,
     SameOriginAndDestination,
     UnknownStation,
 )
@@ -39,6 +40,16 @@ def same_origin_and_destination_error(
     return JSONResponse(
         status_code=400,
         content={"code": "same_origin_and_destination", "reference": "towards"},
+    )
+
+
+def outside_feed_validity_error(
+    request: Request,
+    exc: OutsideFeedValidity,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        content={"code": "outside_feed_validity"},
     )
 
 

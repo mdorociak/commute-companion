@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from .departure_identity import ScheduledStopEventIdentity
 from .gtfs.models import Route, Station, Trip
 from .gtfs.service_calendar import ServiceCalendar
-from .gtfs.service_day import QueryWindow, ServiceDayResolver
+from .gtfs.service_day import QueryWindow, ServiceDateRange, ServiceDayResolver
 from .gtfs.stop_times import StopTime
 
 
@@ -37,6 +37,7 @@ class Timetable:
     service_calendar: ServiceCalendar
     stop_times_by_stop: dict[str, list[StopTime]]
     provider_timezone: ZoneInfo
+    validity: ServiceDateRange = field(default_factory=ServiceDateRange)
     maximum_service_day_seconds: int = field(init=False)
     _service_day_resolver: ServiceDayResolver = field(init=False, repr=False)
 
@@ -54,6 +55,20 @@ class Timetable:
             ),
             default=0,
         )
+
+    def covers(self, window: QueryWindow) -> bool:
+        first, last = self.validity.first, self.validity.last
+        if last is not None:
+            latest_event_utc = self._service_day_resolver.scheduled_instant_utc(
+                last,
+                self.maximum_service_day_seconds,
+            )
+            if window.start_utc > latest_event_utc:
+                return False
+        if first is None:
+            return True
+        earliest_event_utc = self._service_day_resolver.anchor_utc(first)
+        return window.end_utc > earliest_event_utc
 
     def _station_stops(self, station_id: str) -> list[tuple[str, str | None]]:
         station = self.stations.get(station_id)
@@ -99,6 +114,8 @@ class Timetable:
             self.maximum_service_day_seconds,
         )
         for service_date in service_dates:
+            if not self.validity.contains(service_date):
+                continue
             for stop_id, platform_code in origin_stops:
                 for stop_time in self.stop_times_by_stop.get(stop_id, []):
                     if stop_time.pickup_type == 1:

@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -7,11 +7,13 @@ import pytest
 from app.departure_listing import (
     DEFAULT_DEPARTURE_HORIZON,
     ListDepartures,
+    OutsideFeedValidity,
     SameOriginAndDestination,
     UnknownStation,
 )
 from app.gtfs.loader import load_routes, load_stations, load_trips
 from app.gtfs.service_calendar import load_service_calendar
+from app.gtfs.service_day import ServiceDateRange
 from app.gtfs.stop_times import load_stop_times
 from app.timetable import Timetable
 
@@ -24,7 +26,10 @@ UNKNOWN = "no-such-station"
 ALSO_UNKNOWN = "no-such-station-either"
 
 
-def _listing(horizon: timedelta = DEFAULT_DEPARTURE_HORIZON) -> ListDepartures:
+def _listing(
+    horizon: timedelta = DEFAULT_DEPARTURE_HORIZON,
+    validity: ServiceDateRange | None = None,
+) -> ListDepartures:
     return ListDepartures(
         Timetable(
             provider_id="kd",
@@ -34,6 +39,7 @@ def _listing(horizon: timedelta = DEFAULT_DEPARTURE_HORIZON) -> ListDepartures:
             service_calendar=load_service_calendar(FIXTURE_DIR),
             stop_times_by_stop=load_stop_times(FIXTURE_DIR),
             provider_timezone=WARSAW,
+            validity=validity or ServiceDateRange(),
         ),
         horizon=horizon,
     )
@@ -121,3 +127,45 @@ def test_limit_is_applied_after_ordering_by_departure_time() -> None:
     assert len(full) > 1
     assert [d.departure_time for d in full] == sorted(d.departure_time for d in full)
     assert limited == full[:1]
+
+
+def test_a_request_after_the_feeds_final_event_is_outside_validity() -> None:
+    listing = _listing(validity=ServiceDateRange(last=date(2026, 5, 23)))
+
+    with pytest.raises(OutsideFeedValidity):
+        listing.execute(BRZEG, datetime(2026, 5, 24, 1, 11, tzinfo=WARSAW))
+
+
+def test_the_last_service_days_late_trip_is_listed_after_midnight() -> None:
+    listing = _listing(validity=ServiceDateRange(last=date(2026, 5, 23)))
+
+    departures = listing.execute(BRZEG, datetime(2026, 5, 24, 0, 30, tzinfo=WARSAW))
+
+    assert [departure.departure_time for departure in departures] == [
+        datetime(2026, 5, 24, 1, 10, tzinfo=WARSAW)
+    ]
+
+
+def test_a_request_ending_before_the_first_service_day_is_outside_validity() -> None:
+    listing = _listing(validity=ServiceDateRange(first=date(2026, 5, 21)))
+
+    with pytest.raises(OutsideFeedValidity):
+        listing.execute(BRZEG, datetime(2026, 5, 19, 14, 32, tzinfo=WARSAW))
+
+
+def test_validity_is_checked_before_station_references() -> None:
+    listing = _listing(validity=ServiceDateRange(last=date(2026, 5, 23)))
+    now = datetime(2026, 5, 24, 1, 11, tzinfo=WARSAW)
+
+    with pytest.raises(OutsideFeedValidity):
+        listing.execute(UNKNOWN, now, towards_station_id=ALSO_UNKNOWN)
+
+
+def test_a_partly_covered_window_lists_only_the_covered_departures() -> None:
+    listing = _listing(validity=ServiceDateRange(last=date(2026, 5, 19)))
+
+    departures = listing.execute(BRZEG, datetime(2026, 5, 19, 14, 32, tzinfo=WARSAW))
+
+    assert [departure.departure_time for departure in departures] == [
+        datetime(2026, 5, 19, 14, 32, tzinfo=WARSAW)
+    ]

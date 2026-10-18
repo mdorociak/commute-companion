@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from app.gtfs.service_day import QueryWindow, ServiceDayResolver
+from app.gtfs.service_day import QueryWindow, ServiceDateRange, ServiceDayResolver
 
 WARSAW = ZoneInfo("Europe/Warsaw")
 RESOLVER = ServiceDayResolver(WARSAW)
@@ -111,3 +111,23 @@ def test_negative_service_day_values_are_rejected() -> None:
         RESOLVER.scheduled_instant_utc(date(2026, 5, 24), -1)
     with pytest.raises(ValueError):
         RESOLVER.candidate_service_dates(window, -1)
+
+
+def test_a_service_date_range_includes_both_of_its_ends() -> None:
+    validity = ServiceDateRange(first=date(2026, 8, 11), last=date(2026, 12, 12))
+
+    assert validity.contains(date(2026, 8, 11))
+    assert validity.contains(date(2026, 12, 12))
+    assert not validity.contains(date(2026, 8, 10))
+    assert not validity.contains(date(2026, 12, 13))
+
+
+def test_a_service_date_range_without_bounds_contains_every_date() -> None:
+    assert ServiceDateRange().contains(date(1999, 1, 1))
+    assert ServiceDateRange(first=date(2026, 8, 11)).contains(date(2099, 1, 1))
+    assert ServiceDateRange(last=date(2026, 12, 12)).contains(date(1999, 1, 1))
+
+
+def test_a_service_date_range_ending_before_it_starts_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        ServiceDateRange(first=date(2026, 12, 12), last=date(2026, 8, 11))

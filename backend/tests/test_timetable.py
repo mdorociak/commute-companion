@@ -9,7 +9,7 @@ from app.gtfs.service_calendar import (
     ServiceException,
     load_service_calendar,
 )
-from app.gtfs.service_day import QueryWindow
+from app.gtfs.service_day import QueryWindow, ServiceDateRange
 from app.gtfs.stop_times import StopTime, load_stop_times
 from app.timetable import Departure, Timetable
 
@@ -21,7 +21,7 @@ BRZEG_DOLNY = "1413092"
 OLAWA = "3000001"
 
 
-def _timetable() -> Timetable:
+def _timetable(validity: ServiceDateRange | None = None) -> Timetable:
     return Timetable(
         provider_id="kd",
         stations=load_stations(FIXTURE_DIR),
@@ -30,6 +30,7 @@ def _timetable() -> Timetable:
         service_calendar=load_service_calendar(FIXTURE_DIR),
         stop_times_by_stop=load_stop_times(FIXTURE_DIR),
         provider_timezone=WARSAW,
+        validity=validity or ServiceDateRange(),
     )
 
 
@@ -399,3 +400,83 @@ def test_maximum_service_day_seconds_uses_arrivals_and_departures() -> None:
     )
 
     assert timetable.maximum_service_day_seconds == 100_000
+
+
+def test_a_window_starting_at_the_last_service_days_final_event_is_covered() -> None:
+    timetable = _timetable(ServiceDateRange(last=date(2026, 5, 23)))
+    final_event = datetime(2026, 5, 24, 1, 10, tzinfo=WARSAW)
+    window = QueryWindow(final_event, datetime(2026, 5, 24, 2, 0, tzinfo=WARSAW))
+
+    assert timetable.covers(window)
+    assert [
+        d.departure_time for d in timetable.departures_in_window(BRZEG, window)
+    ] == [final_event]
+
+
+def test_a_window_after_the_last_service_days_final_event_is_not_covered() -> None:
+    timetable = _timetable(ServiceDateRange(last=date(2026, 5, 23)))
+    window = QueryWindow(
+        datetime(2026, 5, 24, 1, 11, tzinfo=WARSAW),
+        datetime(2026, 5, 25, 1, 11, tzinfo=WARSAW),
+    )
+
+    assert not timetable.covers(window)
+
+
+def test_a_window_ending_at_the_first_service_days_anchor_is_not_covered() -> None:
+    timetable = _timetable(ServiceDateRange(first=date(2026, 5, 25)))
+    ends_at_anchor = QueryWindow(
+        datetime(2026, 5, 24, 12, 0, tzinfo=WARSAW),
+        datetime(2026, 5, 25, 0, 0, tzinfo=WARSAW),
+    )
+    ends_after_anchor = QueryWindow(
+        datetime(2026, 5, 24, 12, 0, tzinfo=WARSAW),
+        datetime(2026, 5, 25, 0, 1, tzinfo=WARSAW),
+    )
+
+    assert not timetable.covers(ends_at_anchor)
+    assert timetable.covers(ends_after_anchor)
+
+
+def test_the_final_event_follows_the_noon_anchor_on_the_autumn_change() -> None:
+    timetable = _timetable(ServiceDateRange(last=date(2026, 10, 25)))
+    final_event = datetime(2026, 10, 26, 1, 10, tzinfo=WARSAW)
+
+    covered = QueryWindow(final_event, datetime(2026, 10, 26, 2, 0, tzinfo=WARSAW))
+    not_covered = QueryWindow(
+        datetime(2026, 10, 26, 1, 11, tzinfo=WARSAW),
+        datetime(2026, 10, 26, 2, 0, tzinfo=WARSAW),
+    )
+
+    assert timetable.covers(covered)
+    assert [
+        d.departure_time for d in timetable.departures_in_window(BRZEG, covered)
+    ] == [final_event]
+    assert not timetable.covers(not_covered)
+
+
+def test_an_unbounded_validity_covers_any_window() -> None:
+    window = QueryWindow(
+        datetime(2030, 1, 1, 12, 0, tzinfo=WARSAW),
+        datetime(2030, 1, 2, 12, 0, tzinfo=WARSAW),
+    )
+
+    assert _timetable().covers(window)
+
+
+def test_service_dates_outside_validity_are_excluded() -> None:
+    window = QueryWindow(
+        datetime(2026, 5, 19, 14, 32, tzinfo=WARSAW),
+        datetime(2026, 5, 20, 14, 32, tzinfo=WARSAW),
+    )
+
+    def departure_times(validity: ServiceDateRange) -> list[datetime]:
+        departures = _timetable(validity).departures_in_window(BRZEG, window)
+        return [departure.departure_time for departure in departures]
+
+    assert departure_times(ServiceDateRange(last=date(2026, 5, 19))) == [
+        datetime(2026, 5, 19, 14, 32, tzinfo=WARSAW)
+    ]
+    assert departure_times(ServiceDateRange(first=date(2026, 5, 20))) == [
+        datetime(2026, 5, 20, 5, 36, tzinfo=WARSAW)
+    ]

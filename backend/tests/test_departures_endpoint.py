@@ -1,6 +1,6 @@
 import csv
 import json
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -11,6 +11,7 @@ from app.api.v1.departures import current_time
 from app.departure_listing import ListDepartures
 from app.gtfs.loader import load_routes, load_stations, load_trips
 from app.gtfs.service_calendar import load_service_calendar
+from app.gtfs.service_day import ServiceDateRange
 from app.gtfs.stop_times import load_stop_times
 from app.main import app
 from app.timetable import Timetable
@@ -22,7 +23,7 @@ BRZEG = "2246799"
 OLAWA = "3000001"
 
 
-def _load_timetable() -> Timetable:
+def _load_timetable(validity: ServiceDateRange | None = None) -> Timetable:
     return Timetable(
         provider_id="kd",
         stations=load_stations(FIXTURE_DIR),
@@ -31,6 +32,7 @@ def _load_timetable() -> Timetable:
         service_calendar=load_service_calendar(FIXTURE_DIR),
         stop_times_by_stop=load_stop_times(FIXTURE_DIR),
         provider_timezone=WARSAW,
+        validity=validity or ServiceDateRange(),
     )
 
 
@@ -40,8 +42,11 @@ def reset_overrides():
     app.dependency_overrides.clear()
 
 
-def _client_at(now: datetime) -> TestClient:
-    app.state.departure_listing = ListDepartures(_load_timetable())
+def _client_at(
+    now: datetime,
+    validity: ServiceDateRange | None = None,
+) -> TestClient:
+    app.state.departure_listing = ListDepartures(_load_timetable(validity))
     app.dependency_overrides[current_time] = lambda: now
     return TestClient(app)
 
@@ -134,6 +139,33 @@ def test_unknown_station_returns_not_found_naming_the_reference() -> None:
     contract = _contract_response("unknown_origin")
     assert response.status_code == contract["status"]
     assert response.json() == contract["body"]
+
+
+def test_a_request_outside_feed_validity_returns_service_unavailable() -> None:
+    client = _client_at(
+        datetime(2026, 5, 24, 1, 11, tzinfo=WARSAW),
+        validity=ServiceDateRange(last=date(2026, 5, 23)),
+    )
+
+    response = client.get(_departures_path(BRZEG))
+
+    contract = _contract_response("outside_feed_validity")
+    assert response.status_code == contract["status"]
+    assert response.json() == contract["body"]
+
+
+def test_the_feed_info_end_date_bounds_the_served_timetable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("KD_GTFS_DIR", str(FIXTURE_DIR))
+    app.dependency_overrides[current_time] = lambda: datetime(
+        2026, 12, 13, 12, 0, tzinfo=WARSAW
+    )
+
+    with TestClient(app) as client:
+        response = client.get(_departures_path(BRZEG))
+
+    assert response.status_code == 503
 
 
 def test_towards_limits_the_board_to_trips_calling_at_that_station() -> None:

@@ -23,6 +23,15 @@ class SameOriginAndDestination(Exception):
         self.station_id = station_id
 
 
+class OutsideFeedValidity(Exception):
+    def __init__(self, window: QueryWindow) -> None:
+        super().__init__(
+            f"the timetable does not cover {window.start_utc.isoformat()} "
+            f"and {window.end_utc.isoformat()}"
+        )
+        self.window = window
+
+
 @dataclass(frozen=True)
 class ListDepartures:
     timetable: Timetable
@@ -42,14 +51,17 @@ class ListDepartures:
         if now.tzinfo is None or now.utcoffset() is None:
             raise ValueError("now must be timezone-aware")
 
+        start_utc = now.astimezone(UTC)
+        window = QueryWindow(start_utc, start_utc + self.horizon)
+        if not self.timetable.covers(window):
+            raise OutsideFeedValidity(window)
+
         self._require_known_station(station_id, "station_id")
         if towards_station_id is not None:
             self._require_known_station(towards_station_id, "towards")
             if towards_station_id == station_id:
                 raise SameOriginAndDestination(station_id)
 
-        start_utc = now.astimezone(UTC)
-        window = QueryWindow(start_utc, start_utc + self.horizon)
         return self.timetable.departures_in_window(
             station_id,
             window,

@@ -1,0 +1,6 @@
+{
+  "status": 503,
+  "body": {
+    "code": "outside_feed_validity"
+  }
+}
