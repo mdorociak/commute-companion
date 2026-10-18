@@ -2,10 +2,10 @@ import Foundation
 
 struct DepartureRequestErrorDTO: Decodable, Sendable {
     let code: String
-    let reference: String
+    let reference: String?
 
     var unknownStationRole: DepartureStationRole? {
-        guard code == "unknown_station" else { return nil }
+        guard code == "unknown_station", let reference else { return nil }
 
         switch reference {
         case "station_id":
@@ -17,5 +17,9 @@ struct DepartureRequestErrorDTO: Decodable, Sendable {
         default:
             return nil
         }
+    }
+
+    var isOutsideFeedValidity: Bool {
+        code == "outside_feed_validity"
     }
 }

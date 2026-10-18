@@ -6,6 +6,7 @@ enum DepartureStationRole: Equatable, Sendable {
 enum DeparturesRepositoryError: Error, Equatable, Sendable {
     case unreachable
     case serverFailure
+    case timetableNotInEffect
     case invalidData
     case unknownStation(DepartureStationRole)
     case unexpected

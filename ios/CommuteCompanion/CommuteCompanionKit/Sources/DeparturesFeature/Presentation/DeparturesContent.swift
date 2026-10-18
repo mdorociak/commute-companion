@@ -218,6 +218,8 @@ private extension DeparturesViewFailure {
         switch self {
         case .unreachable, .serverFailure:
             "Scheduled departures unavailable"
+        case .timetableNotInEffect:
+            "Timetable not in effect"
         case .invalidData:
             "Unable to read scheduled departures"
         case .unknownStation:
@@ -233,6 +235,8 @@ private extension DeparturesViewFailure {
             "The server could not be reached. Check your connection and try again."
         case .serverFailure:
             "The server could not provide scheduled departures right now. Try again later."
+        case .timetableNotInEffect:
+            "The server's timetable does not cover today, so it cannot list scheduled departures. They will return once the timetable is updated."
         case .invalidData:
             "The server response could not be understood. Try again later."
         case .unknownStation(.origin):
@@ -250,6 +254,8 @@ private extension DeparturesViewFailure {
             "wifi.slash"
         case .serverFailure:
             "exclamationmark.icloud"
+        case .timetableNotInEffect:
+            "calendar.badge.exclamationmark"
         case .invalidData:
             "exclamationmark.triangle"
         case .unknownStation:
@@ -347,6 +353,10 @@ private let previewFetchedAt = try! Date("2026-05-20T05:16:40+02:00", strategy: 
 
 #Preview("Server failure") {
     DeparturesStatePreview(state: .failure(.serverFailure))
+}
+
+#Preview("Timetable not in effect") {
+    DeparturesStatePreview(state: .failure(.timetableNotInEffect))
 }
 
 #Preview("Invalid data") {

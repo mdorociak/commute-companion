@@ -74,6 +74,7 @@ struct DeparturesViewModelTests {
         ] = [
             (.unreachable, .unreachable),
             (.serverFailure, .serverFailure),
+            (.timetableNotInEffect, .timetableNotInEffect),
             (.invalidData, .invalidData),
             (.unknownStation(.origin), .unknownStation(.origin)),
             (.unknownStation(.onward), .unknownStation(.onward)),
@@ -194,6 +195,7 @@ struct DeparturesViewModelTests {
         ] = [
             (.unreachable, .unreachable),
             (.serverFailure, .serverFailure),
+            (.timetableNotInEffect, .timetableNotInEffect),
             (.invalidData, .invalidData),
             (.unexpected, .unexpected),
         ]

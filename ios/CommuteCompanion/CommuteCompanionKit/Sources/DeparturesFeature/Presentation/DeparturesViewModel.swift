@@ -4,6 +4,7 @@ import Observation
 enum DeparturesViewFailure: Equatable, Sendable {
     case unreachable
     case serverFailure
+    case timetableNotInEffect
     case invalidData
     case unknownStation(DepartureStationRole)
     case unexpected
@@ -99,6 +100,8 @@ final class DeparturesViewModel {
             .unreachable
         case .serverFailure:
             .serverFailure
+        case .timetableNotInEffect:
+            .timetableNotInEffect
         case .invalidData:
             .invalidData
         case .unknownStation(let role):

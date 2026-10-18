@@ -36,8 +36,8 @@ struct RemoteDeparturesRepository: DeparturesRepository {
         case .httpStatus(404, let body):
             failure(forNotFound: body)
 
-        case .httpStatus(500..<600, _):
-            .serverFailure
+        case .httpStatus(500..<600, let body):
+            failure(forServerError: body)
 
         case .httpStatus:
             .unexpected
@@ -70,5 +70,21 @@ struct RemoteDeparturesRepository: DeparturesRepository {
         }
 
         return .unknownStation(role)
+    }
+
+    private static func failure(
+        forServerError body: Data
+    ) -> DeparturesRepositoryError {
+        guard
+            let dto = try? JSONDecoder().decode(
+                DepartureRequestErrorDTO.self,
+                from: body
+            ),
+            dto.isOutsideFeedValidity
+        else {
+            return .serverFailure
+        }
+
+        return .timetableNotInEffect
     }
 }

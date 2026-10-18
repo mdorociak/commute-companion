@@ -172,6 +172,29 @@ struct RemoteDeparturesRepositoryTests {
     }
 
     @Test
+    func fetchDeparturesMapsOutsideFeedValidityToTimetableNotInEffect() async throws {
+        let repository = try makeRepository(
+            response: contractResponse("outside_feed_validity")
+        )
+
+        await #expect(throws: DeparturesRepositoryError.timetableNotInEffect) {
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
+        }
+    }
+
+    @Test
+    func fetchDeparturesTreatsAnUnrecognisedServerErrorBodyAsServerFailure() async throws {
+        let repository = try makeRepository(
+            statusCode: 503,
+            body: #"{"code": "maintenance"}"#
+        )
+
+        await #expect(throws: DeparturesRepositoryError.serverFailure) {
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
+        }
+    }
+
+    @Test
     func fetchDeparturesMapsANonHTTPResponseToInvalidData() async throws {
         let baseURL = try #require(URL(string: "https://example.com"))
         let apiClient = APIClient(
