@@ -94,11 +94,12 @@ public struct APIClient: Sendable {
         let slashes = CharacterSet(charactersIn: "/")
         let basePath = components.path.trimmingCharacters(in: slashes)
         let endpointPath = path.trimmingCharacters(in: slashes)
-        components.path = [basePath, endpointPath]
+        components.path = "/" + [basePath, endpointPath]
             .filter { !$0.isEmpty }
             .joined(separator: "/")
-        components.path.insert("/", at: components.path.startIndex)
         components.queryItems = queryItems.isEmpty ? nil : queryItems
+        components.percentEncodedQuery = components.percentEncodedQuery?
+            .replacingOccurrences(of: "+", with: "%2B")
 
         guard let url = components.url else {
             throw APIError.invalidURL

@@ -51,6 +51,27 @@ func getBuildsRequestAndDecodesSuccessfulResponse() async throws {
 }
 
 @Test
+func getEncodesAPlusInAQueryValueSoTheServerDoesNotReadItAsASpace() async throws {
+    let recorder = RequestRecorder()
+    let client = try makeClient { request in
+        await recorder.record(request)
+        return HTTPResponse(
+            data: Data(#"{"value":"ok"}"#.utf8),
+            statusCode: 200
+        )
+    }
+
+    let _: Payload = try await client.get(
+        path: "api/v1/stations",
+        queryItems: [URLQueryItem(name: "towards", value: "a+b c")],
+        as: Payload.self
+    )
+
+    let request = await recorder.request
+    #expect(request?.url?.query == "towards=a%2Bb%20c")
+}
+
+@Test
 func getRejectsNonSuccessfulStatusCode() async throws {
     let transport = StubTransport { _ in
         HTTPResponse(data: Data(), statusCode: 503)
