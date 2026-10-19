@@ -236,7 +236,7 @@ private extension DeparturesViewFailure {
         case .serverFailure:
             "The server could not provide scheduled departures right now. Try again later."
         case .timetableNotInEffect:
-            "The server's timetable does not cover today, so it cannot list scheduled departures. They will return once the timetable is updated."
+            "The active schedule does not include today's date. Timetable data will return automatically when the next schedule period begins."
         case .invalidData:
             "The server response could not be understood. Try again later."
         case .unknownStation(.origin):
