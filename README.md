@@ -40,7 +40,7 @@ completed functionality.
   drops out of the timetable leads back to setup with a message saying whether
   the home station or the destination is no longer in the timetable.
 - **Continuous integration:** GitHub Actions runs the deterministic backend
-  tests, builds the iOS app with Xcode 26.6, and runs the aggregate
+  tests, builds the iOS app with Xcode 27.0, and runs the aggregate
   `CommuteCompanionKit` test scheme on an iOS Simulator.
 
 The iOS app opens on the configured commute's scheduled departure board. Station

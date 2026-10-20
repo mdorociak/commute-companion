@@ -22,10 +22,10 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 20
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
 
     steps:
       - uses: actions/checkout@v7
@@ -48,4 +48,4 @@ jobs:
         run: >-
           xcodebuild test
           -scheme CommuteCompanionKit
-          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'
+          -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.0'
