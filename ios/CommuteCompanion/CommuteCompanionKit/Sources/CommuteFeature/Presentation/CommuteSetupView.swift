@@ -10,7 +10,7 @@ public struct CommuteSetupView<Picker: View>: View {
         commute: SavedCommute? = nil,
         reason: CommuteSetupReason? = nil,
         saved: @escaping (SavedCommute) -> Void,
-        @ViewBuilder picker: @escaping (@escaping (StationReference) -> Void) -> Picker
+        @ContentBuilder picker: @escaping (@escaping (StationReference) -> Void) -> Picker
     ) {
         _viewModel = State(
             initialValue: CommuteSetupViewModel(
@@ -25,7 +25,7 @@ public struct CommuteSetupView<Picker: View>: View {
 
     init(
         viewModel: CommuteSetupViewModel,
-        @ViewBuilder picker: @escaping (@escaping (StationReference) -> Void) -> Picker
+        @ContentBuilder picker: @escaping (@escaping (StationReference) -> Void) -> Picker
     ) {
         _viewModel = State(initialValue: viewModel)
         self.picker = picker
@@ -94,7 +94,7 @@ public struct CommuteSetupView<Picker: View>: View {
         }
     }
 
-    @ViewBuilder
+    @ContentBuilder
     private func value(for station: StationReference?) -> some View {
         if let station {
             Text(verbatim: station.displayName)

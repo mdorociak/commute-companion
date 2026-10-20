@@ -10,7 +10,7 @@ struct DeparturesContent: View {
 
     @Environment(\.locale) private var locale
 
-    @ViewBuilder
+    @ContentBuilder
     var body: some View {
         switch state {
         case .idle, .loading:

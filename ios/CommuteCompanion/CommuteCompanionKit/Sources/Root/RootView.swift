@@ -44,7 +44,7 @@ public struct RootView: View {
         }
     }
 
-    @ViewBuilder
+    @ContentBuilder
     private var content: some View {
         switch RootDestination(savedCommute.state) {
         case .loading:
@@ -63,7 +63,7 @@ public struct RootView: View {
         }
     }
 
-    @ToolbarContentBuilder
+    @ContentBuilder
     private var browseStations: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             NavigationLink(value: RootRoute.stations) {

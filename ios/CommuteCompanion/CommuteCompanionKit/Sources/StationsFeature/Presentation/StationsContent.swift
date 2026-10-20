@@ -12,7 +12,7 @@ struct StationsContent: View {
     let rowAction: StationRowAction
     let retry: () -> Void
 
-    @ViewBuilder
+    @ContentBuilder
     var body: some View {
         switch state {
         case .idle, .loading:
@@ -56,7 +56,7 @@ struct StationsContent: View {
         }
     }
 
-    @ViewBuilder
+    @ContentBuilder
     private func row(for station: Station) -> some View {
         switch rowAction {
         case .navigate:
