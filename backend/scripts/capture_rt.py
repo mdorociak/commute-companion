@@ -54,7 +54,13 @@ def feed_url() -> str:
     url = os.environ.get("KD_RT_URL", "").strip()
     if not url:
         raise SystemExit("KD_RT_URL is not set")
-    if urlsplit(url).scheme != "https":
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        raise SystemExit(
+            "KD_RT_URL must look like https://host/path; "
+            f"parsed scheme {parts.scheme!r}, host {parts.hostname!r}"
+        )
+    if parts.scheme != "https":
         print("warning: KD_RT_URL is not https; the password travels in clear",
               file=sys.stderr)
     return url
