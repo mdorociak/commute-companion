@@ -3,7 +3,7 @@
 [![Backend CI](https://github.com/mdorociak/commute-companion/actions/workflows/backend.yml/badge.svg)](https://github.com/mdorociak/commute-companion/actions/workflows/backend.yml)
 [![iOS CI](https://github.com/mdorociak/commute-companion/actions/workflows/ios.yml/badge.svg)](https://github.com/mdorociak/commute-companion/actions/workflows/ios.yml)
 
-An iOS commuter companion for recurring Brzeg → Wrocław and Brzeg → Opole
+An iOS commuter companion for recurring Brzeg → Wrocław
 journeys. The current implementation combines a FastAPI scheduled-transport
 backend with the beginning of a native SwiftUI client. Realtime disruption and
 Wrocław city-transit connections remain part of the product direction, not
@@ -64,8 +64,7 @@ The application is a commute dashboard rather than a journey planner. Stations
 and lines are chosen once during setup; the daily screen shows the configured
 commute.
 
-Opole is intentionally train-only in the initial product scope. Realtime,
-freshness metadata, caching, and connection calculation must not be presented as
-complete until they are integrated and tested end to end.
+Realtime, freshness metadata, caching, and connection calculation must not be
+presented as complete until they are integrated and tested end to end.
 
 ---
