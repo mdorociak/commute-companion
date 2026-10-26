@@ -1,30 +1,70 @@
-from __future__ import annotations
+from dataclasses import dataclass
+from datetime import date, datetime
+from enum import IntEnum, StrEnum
 
-from pydantic import BaseModel
+
+class TripRelationship(IntEnum):
+    SCHEDULED = 0
+    ADDED = 1
+    UNSCHEDULED = 2
+    CANCELED = 3
+    REPLACEMENT = 5
+    DUPLICATED = 6
 
 
-class StopUpdate(BaseModel):
+class StopRelationship(IntEnum):
+    SCHEDULED = 0
+    SKIPPED = 1
+    NO_DATA = 2
+    UNSCHEDULED = 3
 
+
+class RejectionReason(StrEnum):
+    MISSING_TRIP_ID = "missing_trip_id"
+    MISSING_STOP_SEQUENCE = "missing_stop_sequence"
+    REPEATED_STOP_SEQUENCE = "repeated_stop_sequence"
+    MALFORMED_START_DATE = "malformed_start_date"
+    UNKNOWN_TRIP_RELATIONSHIP = "unknown_trip_relationship"
+    UNKNOWN_STOP_RELATIONSHIP = "unknown_stop_relationship"
+    DELAY_WITHOUT_TIME = "delay_without_time"
+
+
+@dataclass(frozen=True)
+class StopUpdate:
     stop_sequence: int
-    arrival_time: int | None = None
-    departure_time: int | None = None
+    stop_id: str | None
+    arrival_time: datetime | None
+    departure_time: datetime | None
+    relationship: StopRelationship
 
 
-class TripUpdate(BaseModel):
+@dataclass(frozen=True)
+class TripUpdate:
+    entity_id: str
     trip_id: str
-    vehicle_id: str | None = None
-    # Keyed by stop_sequence for O(1) merge with static stop_times.
-    stops: dict[int, StopUpdate]
+    start_date: date | None
+    relationship: TripRelationship
+    vehicle_id: str | None
+    stops: tuple[StopUpdate, ...]
 
 
-class VehiclePosition(BaseModel):
+@dataclass(frozen=True)
+class Rejection:
+    entity_id: str
+    reason: RejectionReason
+
+
+@dataclass(frozen=True)
+class VehiclePosition:
     vehicle_id: str
     latitude: float
     longitude: float
     timestamp: int
 
 
-class RealtimeSnapshot(BaseModel):
-    feed_timestamp: int
-    trip_updates: dict[str, TripUpdate]   # trip_id -> TripUpdate
-    vehicle_positions: list[VehiclePosition]
+@dataclass(frozen=True)
+class RealtimeSnapshot:
+    feed_timestamp: datetime | None
+    trip_updates: tuple[TripUpdate, ...]
+    vehicle_positions: tuple[VehiclePosition, ...]
+    rejections: tuple[Rejection, ...]
