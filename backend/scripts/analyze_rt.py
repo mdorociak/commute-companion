@@ -340,7 +340,6 @@ def report_static(captures: list[Capture], static: Static, source: Path) -> None
     unknown_trips: set[str] = set()
     unknown_sequences = stop_id_disagreements = 0
     layouts: Counter[str] = Counter()
-    starts: Counter[str] = Counter()
     final_only_ages: list[float] = []
     for capture in captures:
         updates = trip_updates(capture.feed)
@@ -353,7 +352,6 @@ def report_static(captures: list[Capture], static: Static, source: Path) -> None
             lowest is None or len(known) * lowest[1] < lowest[0] * len(updates)
         ):
             lowest = (len(known), len(updates))
-        by_trip, by_vehicle = vehicles(capture.feed)
 
         for update in known:
             stops = static.stops_by_trip[update.trip.trip_id]
@@ -369,11 +367,6 @@ def report_static(captures: list[Capture], static: Static, source: Path) -> None
                 ):
                     stop_id_disagreements += 1
             layouts[layout(sequences, sorted(stops))] += 1
-
-            vehicle = by_trip.get(update.trip.trip_id)
-            if vehicle is None and update.HasField("vehicle"):
-                vehicle = by_vehicle.get(update.vehicle.id)
-            starts[start_against_vehicle(sequences[0], vehicle)] += 1
 
             if len(sequences) == 1 and sequences[0] == max(stops):
                 event = update.stop_time_update[0]
@@ -391,9 +384,65 @@ def report_static(captures: list[Capture], static: Static, source: Path) -> None
     print(f"  stop sequences not in their trip: {unknown_sequences}; "
           f"stop IDs disagreeing at their sequence: {stop_id_disagreements}")
     print(f"  stops listed, from the lowest sequence: {counts(layouts)}")
-    print(f"  lowest sequence against the vehicle: {counts(starts)}")
     print(f"  updates holding only the final stop: {len(final_only_ages)}; "
           f"time before acquisition: {summary(final_only_ages)}")
+
+
+def report_passed_stops(captures: list[Capture], static: Static) -> None:
+    print("\nPassed stops, every trip update")
+    numbered = sum(
+        sorted(stops) == list(range(min(stops), max(stops) + 1))
+        for stops in static.stops_by_trip.values()
+    )
+    print(f"  static trips numbering their stops without a gap: {numbered} of "
+          f"{len(static.stops_by_trip)}")
+
+    listings: Counter[str] = Counter()
+    starts: Counter[str] = Counter()
+    highest: dict[str, set[int]] = {}
+    steps_back: list[float] = []
+    trips_back: set[str] = set()
+    previous: dict[str, int] = {}
+    for capture in captures:
+        by_trip, by_vehicle = vehicles(capture.feed)
+        current: dict[str, int] = {}
+        for update in trip_updates(capture.feed):
+            sent = [stop.stop_sequence for stop in update.stop_time_update]
+            if not sent:
+                listings["no stops"] += 1
+                continue
+            listings[listing(sent)] += 1
+
+            trip_id = update.trip.trip_id
+            first = min(sent)
+            vehicle = by_trip.get(trip_id)
+            if vehicle is None and update.HasField("vehicle"):
+                vehicle = by_vehicle.get(update.vehicle.id)
+            starts[start_against_vehicle(first, vehicle)] += 1
+
+            highest.setdefault(trip_id, set()).add(max(sent))
+            if trip_id in previous and first < previous[trip_id]:
+                steps_back.append(previous[trip_id] - first)
+                trips_back.add(trip_id)
+            current[trip_id] = first
+        previous = current
+
+    constant = sum(len(values) == 1 for values in highest.values())
+    print(f"  stops listed: {counts(listings)}")
+    print(f"  lowest sequence against the vehicle: {counts(starts)}")
+    print(f"  trips keeping one highest sequence: {constant} of {len(highest)}")
+    print(f"  lowest sequence below the previous snapshot's: {len(steps_back)} "
+          f"times in {len(trips_back)} trips, by {summary(steps_back, number)}")
+
+
+def listing(sent: list[int]) -> str:
+    if len(set(sent)) != len(sent):
+        return "repeated sequence"
+    if sent != sorted(sent):
+        return "out of order"
+    if sent != list(range(sent[0], sent[-1] + 1)):
+        return "with a gap"
+    return "consecutive"
 
 
 def layout(sequences: list[int], trip_sequences: list[int]) -> str:
@@ -590,6 +639,7 @@ def main() -> None:
     report_freshness(captures)
     report_shape(captures)
     report_static(captures, static, args.gtfs)
+    report_passed_stops(captures, static)
     report_delays(captures, static)
 
 
