@@ -1,5 +1,7 @@
+import pytest
 from fastapi.testclient import TestClient
 
+from app.api.v1.stations import station_map
 from app.gtfs.models import Platform, Station
 from app.main import app
 
@@ -22,8 +24,14 @@ def _stub_state() -> dict[str, Station]:
     }
 
 
+@pytest.fixture(autouse=True)
+def reset_overrides():
+    yield
+    app.dependency_overrides.clear()
+
+
 def test_stations_endpoint_returns_all_stations_sorted_by_name() -> None:
-    app.state.stations = _stub_state()
+    app.dependency_overrides[station_map] = _stub_state
     client = TestClient(app)
     response = client.get("/api/v1/stations")
     assert response.status_code == 200
@@ -32,7 +40,7 @@ def test_stations_endpoint_returns_all_stations_sorted_by_name() -> None:
 
 
 def test_stations_response_includes_platforms() -> None:
-    app.state.stations = _stub_state()
+    app.dependency_overrides[station_map] = _stub_state
     client = TestClient(app)
     response = client.get("/api/v1/stations")
     by_name = {station["name"]: station for station in response.json()}
@@ -41,6 +49,6 @@ def test_stations_response_includes_platforms() -> None:
 
 
 def test_unversioned_stops_route_is_not_exposed() -> None:
-    app.state.stations = _stub_state()
+    app.dependency_overrides[station_map] = _stub_state
     response = TestClient(app).get("/stops")
     assert response.status_code == 404

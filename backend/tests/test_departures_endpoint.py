@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.v1.departures import current_time
+from app.api.v1.departures import current_time, departure_listing
 from app.departure_listing import ListDepartures
 from app.gtfs.loader import load_routes, load_stations, load_trips
 from app.gtfs.service_calendar import load_service_calendar
@@ -46,7 +46,8 @@ def _client_at(
     now: datetime,
     validity: ServiceDateRange | None = None,
 ) -> TestClient:
-    app.state.departure_listing = ListDepartures(_load_timetable(validity))
+    listing = ListDepartures(_load_timetable(validity))
+    app.dependency_overrides[departure_listing] = lambda: listing
     app.dependency_overrides[current_time] = lambda: now
     return TestClient(app)
 
