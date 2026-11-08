@@ -23,7 +23,7 @@ def current_time() -> datetime:
 
 
 def departure_listing(request: Request) -> ListDepartures:
-    return request.app.state.active_export.current.departure_listing
+    return request.app.state.active_export.require().departure_listing
 
 
 def unknown_station_error(request: Request, exc: UnknownStation) -> JSONResponse:

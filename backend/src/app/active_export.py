@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from .departure_listing import ListDepartures
 from .gtfs.loader import load_feed_info, load_routes, load_stations, load_trips
 from .gtfs.models import FeedInfo, Station
-from .gtfs.service_calendar import ServiceCalendar, load_service_calendar
+from .gtfs.service_calendar import load_service_calendar
 from .gtfs.service_day import ServiceDateRange
 from .gtfs.stop_times import load_stop_times
 from .timetable import Timetable
@@ -21,17 +21,29 @@ class LoadedExport:
     feed_info: FeedInfo | None
 
 
+class TimetableUnavailable(Exception):
+    def __init__(self) -> None:
+        super().__init__("no timetable export is installed")
+
+
 @dataclass
 class ActiveExport:
-    current: LoadedExport
+    current: LoadedExport | None = None
 
     def install(self, gtfs_dir: Path) -> None:
         self.current = load_export(gtfs_dir)
+
+    def require(self) -> LoadedExport:
+        current = self.current
+        if current is None:
+            raise TimetableUnavailable()
+        return current
 
 
 def load_export(gtfs_dir: Path) -> LoadedExport:
     feed_info = _load_feed_info(gtfs_dir)
     timetable = _build_timetable(gtfs_dir, _feed_validity(feed_info))
+    _reject_empty(timetable)
     return LoadedExport(
         departure_listing=ListDepartures(timetable),
         stations=timetable.stations,
@@ -39,18 +51,16 @@ def load_export(gtfs_dir: Path) -> LoadedExport:
     )
 
 
+def _reject_empty(timetable: Timetable) -> None:
+    if not timetable.stations:
+        raise ValueError("the export has no stations")
+    if not timetable.trips:
+        raise ValueError("the export has no trips")
+    if not timetable.stop_times_by_stop:
+        raise ValueError("the export has no stop times")
+
+
 def _build_timetable(gtfs_dir: Path, validity: ServiceDateRange) -> Timetable:
-    if not (gtfs_dir / "stops.txt").exists():
-        return Timetable(
-            provider_id=_PROVIDER_ID,
-            stations={},
-            trips={},
-            routes={},
-            service_calendar=ServiceCalendar(patterns={}, exceptions={}),
-            stop_times_by_stop={},
-            provider_timezone=_PROVIDER_TIMEZONE,
-            validity=validity,
-        )
     return Timetable(
         provider_id=_PROVIDER_ID,
         stations=load_stations(gtfs_dir),

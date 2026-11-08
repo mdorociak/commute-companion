@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 def station_map(request: Request) -> dict[str, Station]:
-    return request.app.state.active_export.current.stations
+    return request.app.state.active_export.require().stations
 
 
 @router.get("/stations")
