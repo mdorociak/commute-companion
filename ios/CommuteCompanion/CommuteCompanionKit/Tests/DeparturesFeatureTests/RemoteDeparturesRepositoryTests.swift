@@ -183,6 +183,17 @@ struct RemoteDeparturesRepositoryTests {
     }
 
     @Test
+    func fetchDeparturesMapsTimetableUnavailableToServerFailure() async throws {
+        let repository = try makeRepository(
+            response: contractResponse("timetable_unavailable")
+        )
+
+        await #expect(throws: DeparturesRepositoryError.serverFailure) {
+            try await repository.fetchDepartures(query: DepartureQuery(stationID: "2246799"))
+        }
+    }
+
+    @Test
     func fetchDeparturesTreatsAnUnrecognisedServerErrorBodyAsServerFailure() async throws {
         let repository = try makeRepository(
             statusCode: 503,

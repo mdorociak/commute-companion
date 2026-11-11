@@ -158,6 +158,28 @@ struct RemoteStationsRepositoryTests {
         }
     }
 
+    @Test
+    func fetchStationsMapsTimetableUnavailableToServerFailure() async throws {
+        let transport = HTTPTransportStub(
+            response: try contractResponse("timetable_unavailable")
+        )
+
+        let baseURL = try #require(URL(string: "https://example.com"))
+
+        let apiClient = APIClient(
+            baseURL: baseURL,
+            transport: transport
+        )
+
+        let repository = RemoteStationsRepository(
+            apiClient: apiClient
+        )
+
+        await #expect(throws: StationsRepositoryError.serverFailure) {
+            try await repository.fetchStations()
+        }
+    }
+
     @Test(arguments: [400, 404])
     func fetchStationsMapsAClientErrorResponseToUnexpected(
         statusCode: Int
@@ -256,6 +278,22 @@ struct RemoteStationsRepositoryTests {
             try await repository.fetchStations()
         }
     }
+}
+
+private func contractResponse(_ name: String) throws -> HTTPResponse {
+    let file = URL(
+        filePath: "../../../../../contract/stations/\(name).json",
+        relativeTo: URL(filePath: #filePath)
+    )
+    let fixture = try JSONSerialization.jsonObject(with: Data(contentsOf: file))
+    let contract = try #require(fixture as? [String: Any])
+    let statusCode = try #require(contract["status"] as? Int)
+    let body = try #require(contract["body"])
+
+    return HTTPResponse(
+        data: try JSONSerialization.data(withJSONObject: body),
+        statusCode: statusCode
+    )
 }
 
 private actor HTTPTransportStub: HTTPTransport {
